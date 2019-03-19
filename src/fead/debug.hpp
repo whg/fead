@@ -1,0 +1,22 @@
+#pragma once
+
+#include <stdint.h>
+
+class _Debug {
+public:
+	void begin(uint32_t baud);
+
+	void print(char c);
+	void print(const char *str);
+	void print(const char *buffer, uint16_t len);
+	void print(int n);
+	void print(float f);
+
+	template<typename T>
+	void println(T v) {
+		print(v);
+		print('\n');
+	}
+};
+
+extern _Debug Debug;
