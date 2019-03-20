@@ -17,13 +17,16 @@ ISR(USART_RX_vect) {
 #else
 ISR(USART0_RX_vect) {
 #endif
-	fead::SerialUnit::sUnits[0]->receive(UCSR0A, UDR0);
+	// read these first
+	uint8_t status = UCSR0A;
+	uint8_t data = UDR0;
+	fead::SerialUnit::sUnits[0]->receive(status, data);
 }
 
-#if defined(UBRR1L) 
+#ifdef UART_1_AVAILABLE
 ISR(USART1_RX_vect) {
-	// uint8_t status = UCSR1A;
-	// uint8_t d = UDR1;
-	fead::SerialUnit::sUnits[1]->receive(UCSR0A, UDR0);
+	uint8_t status = UCSR1A;
+	uint8_t data = UDR1;
+	fead::SerialUnit::sUnits[1]->receive(status, data);
 }
 #endif

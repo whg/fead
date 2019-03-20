@@ -5,10 +5,22 @@
 #include "fead/packet.hpp"
 #include "fead/debug.hpp"
 
-#define FEAD_FULL_SPEED 8 //3
+#define FEAD_FULL_SPEED 3
 #define FEAD_HALF_SPEED 8
 
 #define FEAD_NUM_SERIAL_UNITS 4
+
+#if defined(UCSR1A)
+#define UART_1_AVAILABLE
+#endif
+
+#if defined(UCSR2A)
+#define UART_2_AVAILABLE
+#endif
+
+#if defined(UCSR3A)
+#define UART_3_AVAILABLE
+#endif
 
 #define FEAD_SET_SERIAL_SPEED(n, speed) UBRR##n##L = speed
 
@@ -43,21 +55,34 @@ public:
 		
 		switch (mUnitNumber) {
 		case 0:FEAD_INIT_SERIAL(0); break;
+#ifdef UART_1_AVAILABLE
 		case 1:FEAD_INIT_SERIAL(1); break;
+#endif
+#ifdef UART_2_AVAILABLE
 		case 2:FEAD_INIT_SERIAL(2); break;
+#endif
+#ifdef UART_3_AVAILABLE
 		case 3:FEAD_INIT_SERIAL(3); break;
+#endif			
 		default: FEAD_INIT_SERIAL(0); break;
 		}
 
 		SerialUnit::sUnits[number] = this;
+
 	}
 
 	void send(const packet_t &packet) const {
 		switch (mUnitNumber) {
 		case 0: { FEAD_SEND_PACKET(0, packet); break; }
+#ifdef UART_1_AVAILABLE
 		case 1: { FEAD_SEND_PACKET(1, packet); break; }
+#endif
+#ifdef UART_2_AVAILABLE
 		case 2: { FEAD_SEND_PACKET(2, packet); break; }
+#endif
+#ifdef UART_3_AVAILABLE
 		case 3: { FEAD_SEND_PACKET(3, packet); break; }
+#endif			
 		default: { FEAD_SEND_PACKET(0, packet); break; }
 		}
 	}

@@ -40,7 +40,7 @@ public:
 
 	template<typename T>
 	void receiveDMX(uint16_t channel, T *value) {
-		auto *receiver = &mDmxReceivers[mDmxReceiverCounter++];
+		auto *receiver = &mDmxReceivers[mDmxNumReceivers++];
 		receiver->channel = channel;
 		receiver->numBytes = sizeof(*value);
 		receiver->ptr = reinterpret_cast<uint8_t*>(value);
@@ -49,25 +49,31 @@ public:
 		}
 	}
 
+	void update() {
+		uint8_t dmxValueIndex = 0;
+		for (uint8_t i = 0; i < mDmxNumReceivers; i++) {
+			auto *receiver = &mDmxReceivers[i];
+			for (uint16_t j = 0; j < receiver->numBytes; j++) {
+				receiver->ptr[j] = mDmxValues[dmxValueIndex++];
+			}
+		}
+	}
 
 public:
-	enum packet_type_t { NONE = 0x11, DMX = 0x00, FEAD = 0xfe };
-
 	void receive(uint8_t status, uint8_t data) override {
 
-		if (status & (1<<FE0)) {
+		if (status & (1<<FE0)) {			
 			mReceivedByteCounter = 0;
-			mPacketType = NONE;
+			mPacketType = FEAD_PACKET_TYPE_NONE;
 		}
 		else {
 			if (mReceivedByteCounter == 0) {
-				mPacketType = static_cast<packet_type_t>(data);
+				mPacketType = data;
 			}
-			else if (mPacketType == DMX) {
+			else if (mPacketType == FEAD_PACKET_TYPE_DMX) {
 				for (uint8_t i = 0; i < mDmxChannelCounter; i++) {
 					if (mDmxChannels[i] == mReceivedByteCounter) {
-						mDmxValues[i] = data;
-						
+						mDmxValues[i] = data;						
 					}
 				}
 			}
@@ -81,14 +87,14 @@ protected:
 	uint8_t mSerialUnit;
 	
 	dmx_receiver_t mDmxReceivers[FEAD_SLAVE_MAX_DMX_RECEIVERS];
-	uint8_t mDmxReceiverCounter;
+	uint8_t mDmxNumReceivers;
 
 	uint16_t mDmxChannels[FEAD_SLAVE_MAX_DMX_CHANNELS];
 	volatile uint8_t mDmxValues[FEAD_SLAVE_MAX_DMX_CHANNELS];
 	uint8_t mDmxChannelCounter;
 
 	volatile uint8_t mReceivedByteCounter;
-	packet_type_t mPacketType;
+	volatile packet_type_t mPacketType;
 };
 
 using DmxSlave = Slave<uint8_t>; // is this good?

@@ -4,10 +4,16 @@
 
 #include "fead/message.hpp"
 
+#define FEAD_PACKET_TYPE_NONE 0x11
+#define FEAD_PACKET_TYPE_DMX  0x00
+#define FEAD_PACKET_TYPE_FEAD 0xfe
+
 #define FEAD_PACKET_LENGTH 11
 
 namespace fead {
 
+typedef uint8_t packet_type_t;
+	
 enum class Command { SET = 3, GET, ACK };
 
 union packet_t {
