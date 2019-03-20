@@ -36,6 +36,7 @@ namespace fead {
 class SerialUnit {
 public:
 	SerialUnit() = default;
+	virtual ~SerialUnit() = default;
 	
 	void open(uint8_t number) {
 		mUnitNumber = number;
