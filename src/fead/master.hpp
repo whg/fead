@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <avr/io.h>
 
-#include "fead/message.hpp"
+#include "fead/request.hpp"
 #include "fead/packet.hpp"
 
 #include "fead/debug.hpp"
@@ -22,11 +22,11 @@ public:
 	}
 	
 	void get(uint16_t unit, param_t param) {
-		send(make_packet(Command::GET, unit, param));
+		send(make_get_packet(Command::GET, unit, param));
 	}
 
-	void set(uint16_t unit, const Message<param_t> &msg) {
-		send(make_packet(Command::SET, unit, msg));
+	void set(uint16_t unit, const Request<param_t> &msg) {
+		send(make_set_packet(Command::SET, unit, msg));
 	}
 
 protected:
@@ -39,5 +39,6 @@ protected:
 	
 };
 
-
+using EasyMaster = Master<int>;
+	
 }
