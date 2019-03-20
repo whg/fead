@@ -21,12 +21,12 @@ public:
 		UCSR1C = (1<<USBS1) | (1<<UCSZ11) | (1<<UCSZ10); // 8 bit, 2 stop bits
 	}
 	
-	void get(uint16_t unit, param_t param) {
-		send(make_get_packet(Command::GET, unit, param));
+	void get(uint16_t unit, const Request<param_t> &req) {
+		send(make_packet(Command::GET, unit, req));
 	}
 
-	void set(uint16_t unit, const Request<param_t> &msg) {
-		send(make_set_packet(Command::SET, unit, msg));
+	void set(uint16_t unit, const Request<param_t> &req) {
+		send(make_packet(Command::SET, unit, req));
 	}
 
 protected:

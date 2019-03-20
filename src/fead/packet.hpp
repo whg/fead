@@ -32,25 +32,17 @@ inline uint8_t get_checksum(const Message<T> &msg) {
 	cs += buffer[0] + buffer[1] + buffer[2] + buffer[3];
 	return cs;
 }
-
+	
 template<typename T>
-inline packet_t make_get_packet(Command c, uint16_t address, T param) {
+inline packet_t make_packet(Command c, uint16_t address, const Message<T> &msg) {
 	packet_t output;
 	output.bits.header = 0xfe;
 	output.bits.command = static_cast<uint8_t>(c);
 	output.bits.address = address;
-	output.bits.param = static_cast<uint8_t>(param);
-	memset(output.bits.payload, 0, FEAD_MESSAGE_PAYLOAD_LENGTH);
-	output.bits.checksum = 0;
-	output.bits.footer = 0xad;
-	return output;
-}
-	
-template<typename T>
-inline packet_t make_set_packet(Command c, uint16_t address, const Message<T> &msg) {
-	packet_t output = make_get_packet(c, address, msg.getParam());
+	output.bits.param = static_cast<uint8_t>(msg.getParam());
 	memcpy(output.bits.payload, msg.getPayloadBuffer(), FEAD_MESSAGE_PAYLOAD_LENGTH);
 	output.bits.checksum = get_checksum(msg);
+	output.bits.footer = 0xad;
 	return output;
 }
 
