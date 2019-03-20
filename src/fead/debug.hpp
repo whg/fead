@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 
+// This is a simple replacement for Serial.print
+// don't push it too hard!
+
 class _Debug {
 public:
 	void begin(uint32_t baud);

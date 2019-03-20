@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <avr/io.h>
 
+#include "fead/hardware.hpp"
 #include "fead/request.hpp"
 #include "fead/packet.hpp"
 
@@ -11,15 +11,11 @@
 namespace fead {
 
 template<typename param_t>
-class Master {
+class Master : public SerialUnit {
 public:
+	Master() = default;
+			
 	virtual ~Master() {}
-
-	Master() {
-		UBRR1L = 3; // 250k baud
-		UCSR1B = (1<<RXEN1) | (1<<TXEN1) | (1<<RXCIE1);
-		UCSR1C = (1<<USBS1) | (1<<UCSZ11) | (1<<UCSZ10); // 8 bit, 2 stop bits
-	}
 	
 	void get(uint16_t unit, const Request<param_t> &req) {
 		send(make_packet(Command::GET, unit, req));
@@ -29,16 +25,18 @@ public:
 		send(make_packet(Command::SET, unit, req));
 	}
 
-protected:
-	void send(const packet_t &packet) {
-		for (uint8_t i = 0; i < FEAD_PACKET_LENGTH; i++) {
-			Debug.println(int(packet.buffer[i]));
-			// TODO: send out of UART1
-		}
+	void receive(uint8_t status, uint8_t data) override {
+		PORTB |= (1<<PB7);
 	}
+
+	void print() {
+		Debug.print("master: ");
+		Debug.println(int(this));
+	}
+
+protected:
+	
 	
 };
-
-using EasyMaster = Master<int>;
 	
 }
