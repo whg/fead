@@ -17,25 +17,57 @@ public:
 			
 	virtual ~Master() {}
 	
-	void get(uint16_t unit, const Request<param_t> &req) {
-		send(make_packet(Command::GET, unit, req));
+	void get(uint16_t unit, const Request<param_t> &request) {
+		send(Packet::create(Command::GET, unit, request));
 	}
 
-	void set(uint16_t unit, const Request<param_t> &req) {
-		send(make_packet(Command::SET, unit, req));
+	void set(uint16_t unit, const Request<param_t> &request) {
+		send(Packet::create(Command::SET, unit, request));
+	}
+
+	void update() {
+		if (mFeadBufferReady) {
+			if (mFeadPacket.isValid()) {
+
+				switch (mFeadPacket.bits.command) {
+				case Command::GET:
+					break;
+				}
+			}
+
+			mFeadBufferReady = false;
+		}
+
 	}
 
 	void receive(uint8_t status, uint8_t data) override {
-		PORTB |= (1<<PB7);
-	}
 
-	void print() {
-		Debug.print("master: ");
-		Debug.println(int(this));
-	}
+		if (status & (1<<FE0)) {			
+			mByteCounter = 0;
+		}
+		else {
+			if (mByteCounter == 0) {
+				mPacketType = data;
+			}
+			
+			if (mPacketType == FEAD_PACKET_TYPE_FEAD && !mFeadBufferReady) {
+				mFeadPacket.buffer[mByteCounter++] = data;
+				if (mByteCounter == FEAD_PACKET_LENGTH) {
+					mFeadBufferReady = true;
+				}
+			} else {
+				mByteCounter++;
+			}
+		}
+		
+	}	
 
 protected:
+	volatile Packet mFeadPacket;
+	volatile bool mFeadBufferReady;
 	
+	volatile uint8_t mByteCounter;
+	volatile packet_type_t mPacketType;
 	
 };
 	

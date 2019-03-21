@@ -1,7 +1,5 @@
 #include "hardware.hpp"
 
-#include <avr/interrupt.h>
-
 namespace fead {
 
 typedef void(SerialUnit::*interrupt_callback_t)(uint8_t, uint8_t);

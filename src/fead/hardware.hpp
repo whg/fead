@@ -1,12 +1,14 @@
 #pragma once
 
 #include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
 
 #include "fead/packet.hpp"
 #include "fead/debug.hpp"
 
-#define FEAD_FULL_SPEED 3
-#define FEAD_HALF_SPEED 8
+#define FEAD_FULL_SPEED 3 // 250k baud at 16MHz
+#define FEAD_HALF_SPEED 8 // 115.2k baud at 16MHz
 
 #define FEAD_NUM_SERIAL_UNITS 4
 
@@ -33,15 +35,20 @@
 
 
 #define FEAD_SEND_PACKET(n, packet)							   \
-		FEAD_SET_SERIAL_SPEED(n, FEAD_HALF_SPEED);			   \
+	cli();													   \
+	FEAD_SET_SERIAL_SPEED(n, FEAD_HALF_SPEED);				   \
+	UDR##n = 0;												   \
+	UCSR##n##A &=  ~(1<<TXC##n);							   \
+	loop_until_bit_is_set(UCSR##n##A, TXC##n);				   \
+	_delay_us(120);											   \
+	FEAD_SET_SERIAL_SPEED(n, FEAD_FULL_SPEED);				   \
+	uint8_t *ptr = &packet.buffer[0];						   \
+	for (uint8_t i = 0; i < FEAD_PACKET_LENGTH; i++) {		   \
 		loop_until_bit_is_set(UCSR##n##A, UDRE##n);			   \
-		UDR##n = 0;											   \
-		FEAD_SET_SERIAL_SPEED(n, FEAD_FULL_SPEED);			   \
-		uint8_t *ptr = &packet.buffer[0];					   \
-		for (uint8_t i = 0; i < FEAD_PACKET_LENGTH; i++) {	   \
-			loop_until_bit_is_set(UCSR##n##A, UDRE##n);		   \
-			UDR##n = *ptr++;								   \
-		}
+		UDR##n = *ptr++;									   \
+	}														   \
+	loop_until_bit_is_set(UCSR##n##A, TXC##n);				   \
+	sei();
 
 namespace fead {
 	
@@ -68,10 +75,11 @@ public:
 		}
 
 		SerialUnit::sUnits[number] = this;
+		sei();
 
 	}
 
-	void send(const packet_t &packet) const {
+	void send(const Packet &packet) const {
 		switch (mUnitNumber) {
 		case 0: { FEAD_SEND_PACKET(0, packet); break; }
 #ifdef UART_1_AVAILABLE
