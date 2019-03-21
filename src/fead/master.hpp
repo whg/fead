@@ -4,33 +4,53 @@
 
 #include "fead/hardware.hpp"
 #include "fead/request.hpp"
+#include "fead/response.hpp"
 #include "fead/packet.hpp"
 
 #include "fead/debug.hpp"
 
 namespace fead {
 
-template<typename param_t>
+template<typename T>
+using reply_handler_t = void (*)(const Response<T>);
+
+using ack_handler_t = void (*)();	
+
+
+template<typename vocab_t>
 class Master : public SerialUnit {
 public:
-	Master() = default;
+	Master():
+		mReplyHandler(nullptr),
+		mAckHandler(nullptr)
+	{}
 			
 	virtual ~Master() {}
 	
-	void get(uint16_t unit, const Request<param_t> &request) {
+	void get(uint16_t unit, const Request<vocab_t> &request) {
 		send(Packet::create(Command::GET, unit, request));
 	}
 
-	void set(uint16_t unit, const Request<param_t> &request) {
+	void set(uint16_t unit, const Request<vocab_t> &request) {
 		send(Packet::create(Command::SET, unit, request));
 	}
 
 	void update() {
 		if (mFeadBufferReady) {
-			if (mFeadPacket.isValid()) {
+			if (mFeadPacket.isValid(FEAD_MASTER_ADDRESS)) {
 
 				switch (mFeadPacket.bits.command) {
-				case Command::GET:
+				case Command::REPLY:
+					if (mReplyHandler) {
+						uint8_t param = mFeadPacket.bits.param;
+						auto response = Response<vocab_t>(param, mFeadPacket.bits.payload);
+						mReplyHandler(response);
+					}
+					break;
+				case Command::ACK:
+					if (mAckHandler) {
+						mAckHandler();
+					}
 					break;
 				}
 			}
@@ -68,6 +88,10 @@ protected:
 	
 	volatile uint8_t mByteCounter;
 	volatile packet_type_t mPacketType;
+
+protected:
+	reply_handler_t<vocab_t> mReplyHandler;
+	ack_handler_t mAckHandler;
 	
 };
 	

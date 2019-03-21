@@ -43,7 +43,10 @@ union Packet {
 		return output;
 	}
 
-	bool isValid() volatile {
+	bool isValid(uint16_t address) volatile {
+		if (address != bits.address) {
+			return false;
+		}
 		uint8_t v = 0;
 		for (uint8_t i = 0; i < FEAD_MESSAGE_PAYLOAD_LENGTH; i++) {
 			v += bits.payload[i];

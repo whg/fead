@@ -31,9 +31,12 @@ public:
 		memcpy(mData.buffer, ptr, sizeof(T));
 	}
 
-	vocab_t getParam() { return mParam; }
+	vocab_t getParam() const { return mParam; }
 	const uint8_t* getPayloadBuffer() const { return mData.buffer; }
 
+	int32_t asInt() const { mData.int32; }
+	float asFloat() const { mData.float32; }
+	
 	void setParam(uint8_t p) { mParam = static_cast<vocab_t>(p); }
 	void setPayloadBuffer(const uint8_t *d) {
 		memset(mData.buffer, d, FEAD_MESSAGE_PAYLOAD_LENGTH);
@@ -46,9 +49,9 @@ protected:
 		struct {
 			uint8_t b0, b1, b2, b3;
 		} bytes;
-		int32_t i32;
-		uint32_t u32;
-		float f;
+		int32_t int32;
+		uint32_t uint32;
+		float float32;
 	} mData;
 };
 	

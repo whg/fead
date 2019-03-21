@@ -26,14 +26,18 @@ struct dmx_receiver_t {
 };
 
 template<typename T>
-using handler_t = Response<T> (*)(const Request<T>);
+using get_handler_t = Response<T> (*)(const Request<T>);
 
-enum { FEAD_SLAVE_NO_ADDRESS = 0xff }; //
+template<typename T>
+using set_handler_t = bool (*)(const Request<T>);
+
+	
+enum { FEAD_SLAVE_NO_ADDRESS = 0xffff }; //
 	
 template<typename vocab_t>
 class Slave : public SerialUnit {
 public:
-	Slave(uint8_t address=FEAD_SLAVE_NO_ADDRESS):
+	Slave(uint16_t address=FEAD_SLAVE_NO_ADDRESS):
 		mAddress(address),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
@@ -45,6 +49,10 @@ public:
 	
 	void reply(const Response<vocab_t> &response) {
 		send(Packet::create(Command::REPLY, FEAD_MASTER_ADDRESS, response));
+	}
+
+	void ack(const Response<vocab_t> &response) {
+		send(Packet::create(Command::ACK, FEAD_MASTER_ADDRESS, response));
 	}
 
 	template<typename T>
@@ -62,11 +70,11 @@ public:
 		mAddress = address;
 	}
 
-	void setGetHandler(handler_t<vocab_t> handler) {
+	void setGetHandler(get_handler_t<vocab_t> handler) {
 		mGetHandler = handler;
 	}
 
-	void setSetHandler(handler_t<vocab_t> handler) {
+	void setSetHandler(set_handler_t<vocab_t> handler) {
 		mSetHandler = handler;
 	}
 
@@ -81,17 +89,25 @@ public:
 		}
 
 		if (mFeadBufferReady) {
-			if (mFeadPacket.isValid()) {
+			if (mFeadPacket.isValid(mAddress)) {
+				uint8_t param = mFeadPacket.bits.param;
+				auto request = Request<vocab_t>(param, mFeadPacket.bits.payload);
 
 				switch (mFeadPacket.bits.command) {
 				case Command::GET:
 					if (mGetHandler) {
-						uint8_t param = mFeadPacket.bits.param;
-						auto response = mGetHandler(Request<vocab_t>(param, mFeadPacket.bits.payload));
+						auto response = mGetHandler(request);
 						reply(response);
 					}
-					// PORTB |= (1<<PB5);					
 					break;
+				case Command::SET:
+					if (mSetHandler) {
+						auto success = mSetHandler(request);
+						if (success) {
+							auto response = Response<vocab_t>(param);
+							ack(response);
+						}
+					}
 				}
 			}
 
@@ -136,7 +152,7 @@ public:
 
 protected:
 	uint8_t mSerialUnit;
-	uint8_t mAddress;
+	uint16_t mAddress;
 	
 	dmx_receiver_t mDmxReceivers[FEAD_SLAVE_MAX_DMX_RECEIVERS];
 	uint8_t mDmxNumReceivers;
@@ -152,7 +168,8 @@ protected:
 	volatile packet_type_t mPacketType;
 
 protected:
-	handler_t<vocab_t> mGetHandler, mSetHandler;
+	get_handler_t<vocab_t> mGetHandler;
+	set_handler_t<vocab_t> mSetHandler;
 };
 
 using DmxSlave = Slave<uint8_t>; // is this good?
