@@ -12,9 +12,11 @@ public:
 	void print(char c);
 	void print(const char *str);
 	void print(const char *buffer, uint16_t len);
+	void print(int32_t n);
 	void print(int n);
+	void print(uint8_t n);
 	void print(float f);
-
+	
 	template<typename T>
 	void println(T v) {
 		print(v);

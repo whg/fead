@@ -25,19 +25,19 @@ struct dmx_receiver_t {
 	uint8_t *ptr;
 };
 
-template<typename T>
-using get_handler_t = Response<T> (*)(const Request<T>);
+template <typename T>
+using get_handler_t = Response<T> (*)(const Request<T> &req);
 
-template<typename T>
-using set_handler_t = bool (*)(const Request<T>);
+template <typename T>
+using set_handler_t = bool (*)(const Request<T> &req);
 
 	
-enum { FEAD_SLAVE_NO_ADDRESS = 0xffff }; //
+enum { FEAD_SLAVE_NO_ADDRESS = 0xff }; //
 	
-template<typename vocab_t>
+template <typename vocab_t>
 class Slave : public SerialUnit {
 public:
-	Slave(uint16_t address=FEAD_SLAVE_NO_ADDRESS):
+	Slave(uint8_t address=FEAD_SLAVE_NO_ADDRESS):
 		mAddress(address),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
@@ -55,7 +55,7 @@ public:
 		send(Packet::create(Command::ACK, FEAD_MASTER_ADDRESS, response));
 	}
 
-	template<typename T>
+	template <typename T>
 	void receiveDMX(uint16_t channel, T *value) {
 		auto *receiver = &mDmxReceivers[mDmxNumReceivers++];
 		receiver->channel = channel;
@@ -152,7 +152,7 @@ public:
 
 protected:
 	uint8_t mSerialUnit;
-	uint16_t mAddress;
+	uint8_t mAddress;
 	
 	dmx_receiver_t mDmxReceivers[FEAD_SLAVE_MAX_DMX_RECEIVERS];
 	uint8_t mDmxNumReceivers;

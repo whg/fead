@@ -11,7 +11,7 @@
 #define FEAD_PACKET_HEADER 0xfe
 #define FEAD_PACKET_FOOTER 0xad
 
-#define FEAD_PACKET_LENGTH 11
+#define FEAD_PACKET_LENGTH 10
 
 #define FEAD_MASTER_ADDRESS 0
 
@@ -30,8 +30,8 @@ inline uint8_t get_checksum(const uint8_t *buffer) {
 union Packet {
 	Packet() {}
 
-    template<typename T>
-    static Packet create(Command c, uint16_t address, const Message<T> &msg) {
+    template <typename T>
+    static Packet create(Command c, uint8_t address, const Message<T> &msg) {
 		Packet output;
 		output.bits.header = FEAD_PACKET_HEADER;
 		output.bits.command = static_cast<uint8_t>(c);
@@ -43,7 +43,7 @@ union Packet {
 		return output;
 	}
 
-	bool isValid(uint16_t address) volatile {
+	bool isValid(uint8_t address) volatile {
 		if (address != bits.address) {
 			return false;
 		}
@@ -58,7 +58,7 @@ union Packet {
 	struct {
 		uint8_t header;
 		uint8_t command;
-		uint16_t address;
+		uint8_t address;
 		uint8_t param;
 		uint8_t payload[FEAD_MESSAGE_PAYLOAD_LENGTH];
 		uint8_t checksum;

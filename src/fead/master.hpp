@@ -11,34 +11,43 @@
 
 namespace fead {
 
-template<typename T>
-using reply_handler_t = void (*)(const Response<T>);
+template <typename T>
+using reply_handler_t = void (*)(const Response<T> &res);
 
 using ack_handler_t = void (*)();	
 
 
-template<typename vocab_t>
+template <typename vocab_t>
 class Master : public SerialUnit {
 public:
 	Master():
+		mFeadBufferReady(false),
 		mReplyHandler(nullptr),
 		mAckHandler(nullptr)
 	{}
 			
 	virtual ~Master() {}
 	
-	void get(uint16_t unit, const Request<vocab_t> &request) {
+	void get(uint8_t unit, const Request<vocab_t> &request) {
 		send(Packet::create(Command::GET, unit, request));
 	}
 
-	void set(uint16_t unit, const Request<vocab_t> &request) {
+	void set(uint8_t unit, const Request<vocab_t> &request) {
 		send(Packet::create(Command::SET, unit, request));
+	}
+
+	void setReplyHandler(reply_handler_t<vocab_t> handler) {
+		mReplyHandler = handler;
+	}
+
+	void setAckHandler(ack_handler_t handler) {
+		mAckHandler = handler;
 	}
 
 	void update() {
 		if (mFeadBufferReady) {
+			
 			if (mFeadPacket.isValid(FEAD_MASTER_ADDRESS)) {
-
 				switch (mFeadPacket.bits.command) {
 				case Command::REPLY:
 					if (mReplyHandler) {
@@ -59,7 +68,8 @@ public:
 		}
 
 	}
-
+	
+public:
 	void receive(uint8_t status, uint8_t data) override {
 
 		if (status & (1<<FE0)) {			
@@ -69,6 +79,7 @@ public:
 			if (mByteCounter == 0) {
 				mPacketType = data;
 			}
+			//			Debug.print(data);
 			
 			if (mPacketType == FEAD_PACKET_TYPE_FEAD && !mFeadBufferReady) {
 				mFeadPacket.buffer[mByteCounter++] = data;
@@ -79,8 +90,9 @@ public:
 				mByteCounter++;
 			}
 		}
-		
-	}	
+	}
+
+	
 
 protected:
 	volatile Packet mFeadPacket;

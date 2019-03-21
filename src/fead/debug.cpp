@@ -7,7 +7,7 @@
 void _Debug::begin(uint32_t baud) {
     UBRR0L = static_cast<uint8_t>(roundf(F_CPU / (16.f * baud)) - 1);
     UCSR0C = (1<<UCSZ01) | (1<<UCSZ00); // 8 bit
-    UCSR0B = (1<<RXEN0) | (1<<TXEN0);
+    UCSR0B = (1<<TXEN0);
 }
 
 void _Debug::print(char c) {
@@ -25,7 +25,7 @@ void _Debug::print(const char *buffer, uint16_t len) {
     }
 }
 
-void _Debug::print(int n) {
+void _Debug::print(int32_t n) {
     char buf[12]; // 2**32 == 10 digits
     char *str = &buf[11];
     *str = '\0';
@@ -35,6 +35,14 @@ void _Debug::print(int n) {
     } while(n);
   
     print(str);
+}
+
+void _Debug::print(int n) {
+	print(static_cast<int32_t>(n));
+}
+
+void _Debug::print(uint8_t n) {
+	print(static_cast<int32_t>(n));
 }
 
 void _Debug::print(float f) {
