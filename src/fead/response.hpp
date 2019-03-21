@@ -4,10 +4,9 @@
 
 namespace fead {
 
+template<typename vocab_t>
+using Response = Message<vocab_t>;
 
-using Response = MessageData;
-	
-
-extern Response EmptyResponse;
+// extern Response EmptyResponse;
 	
 }

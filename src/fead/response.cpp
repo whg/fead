@@ -2,6 +2,6 @@
 
 namespace fead {
 
-Response EmptyResponse;
+// Response EmptyResponse;
 
 }

@@ -13,6 +13,8 @@
 
 #define FEAD_PACKET_LENGTH 11
 
+#define FEAD_MASTER_ADDRESS 0
+
 namespace fead {
 
 using packet_type_t = uint8_t;
@@ -35,18 +37,6 @@ union Packet {
 		output.bits.command = static_cast<uint8_t>(c);
 		output.bits.address = address;
 		output.bits.param = static_cast<uint8_t>(msg.getParam());
-		memcpy(output.bits.payload, msg.getPayloadBuffer(), FEAD_MESSAGE_PAYLOAD_LENGTH);
-		output.bits.checksum = get_checksum(&output.bits.payload[0]);
-		output.bits.footer = FEAD_PACKET_FOOTER;
-		return output;
-	}
-
-	static Packet create(Command c, const MessageData &msg) {
-		Packet output;
-		output.bits.header = FEAD_PACKET_HEADER;
-		output.bits.command = static_cast<uint8_t>(c);
-		output.bits.address = 0; // master address
-		output.bits.param = 0;
 		memcpy(output.bits.payload, msg.getPayloadBuffer(), FEAD_MESSAGE_PAYLOAD_LENGTH);
 		output.bits.checksum = get_checksum(&output.bits.payload[0]);
 		output.bits.footer = FEAD_PACKET_FOOTER;
