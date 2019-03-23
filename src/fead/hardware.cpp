@@ -2,6 +2,9 @@
 
 #include "Arduino.h"
 
+#define FEAD_DE_PIN_NOT_SET 0xff
+#define FEAD_DE_PIN_IS_SET(pin) ((pin) != FEAD_DE_PIN_NOT_SET)
+
 namespace fead {
 
 typedef void(SerialUnit::*interrupt_callback_t)(uint8_t, uint8_t);
@@ -9,6 +12,8 @@ typedef void(SerialUnit::*interrupt_callback_t)(uint8_t, uint8_t);
 SerialUnit* SerialUnit::sUnits[FEAD_NUM_SERIAL_UNITS] = {
     nullptr, nullptr, nullptr, nullptr
 };
+
+SerialUnit::SerialUnit(): mDePin(FEAD_DE_PIN_NOT_SET) {}
 
 void SerialUnit::open(uint8_t number) {
 	mUnitNumber = number;
@@ -33,7 +38,9 @@ void SerialUnit::open(uint8_t number) {
 }
 
 void SerialUnit::send(const Packet &packet) const {
-	digitalWrite(mDePin, HIGH);
+	if (FEAD_DE_PIN_IS_SET(mDePin)) {
+		digitalWrite(mDePin, HIGH);
+	}
 	
 	switch (mUnitNumber) {
 	case 0: { FEAD_SEND_PACKET(0, packet); break; }
@@ -48,8 +55,10 @@ void SerialUnit::send(const Packet &packet) const {
 #endif			
 	default: { FEAD_SEND_PACKET(0, packet); break; }
 	}
-	
-	digitalWrite(mDePin, LOW);
+
+	if (FEAD_DE_PIN_IS_SET(mDePin)) {
+		digitalWrite(mDePin, LOW);
+	}
 }
 
 void SerialUnit::setDePin(uint8_t pin) {
