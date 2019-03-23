@@ -23,7 +23,7 @@ namespace fead {
 enum class Type { FLOAT32, INT32 };
 	
 template <typename vocab_t>
-class Conductor : public SerialUnit {
+class Conductor : public SerialUnit, public Master<vocab_t>::ReplyHandler {
 public:
 	Conductor():
 		mRxBufferReady(false)
@@ -31,26 +31,24 @@ public:
 
 	void init(uint8_t masterSerialUnit) {
 		mMaster.open(masterSerialUnit);
-		mMaster.setReplyHandler(Conductor::replyHandler);
-		mMaster.setAckHandler(Conductor::ackHandler);
+		mMaster.setHandler(this);
 		
 		// conductor always is on USB port
 		Debug.begin(FEAD_CONDUCTOR_BAUD);
 		UCSR0B |= (1<<RXEN0) | (1<<RXCIE0);
 		SerialUnit::sUnits[0] = this;
-		Conductor<vocab_t>::self = this;
 	}
 
-	static void replyHandler(const Response<vocab_t> &res) {
-		if (self->mExpectingType == Type::FLOAT32) {
+	void received(const Response<vocab_t> &res) {
+		if (mExpectingType == Type::FLOAT32) {
 			Debug.println(res.asFloat32());
-		} else if (self->mExpectingType == Type::INT32) {
+		} else if (mExpectingType == Type::INT32) {
 			Debug.println(res.asInt32());
 		}
 	}
 
-	static void ackHandler() {
-		Debug.println("set");
+	void acked() {
+		Debug.println('=');
 	}
 
 	void update() {
@@ -72,6 +70,7 @@ public:
 			auto param = static_cast<vocab_t>(atoi(nextStart));
 			nextStart = p + 1;
 
+			// uppercase characters are for floats
 			mExpectingType = command < 'a' ? Type::FLOAT32 : Type::INT32;
 			
 			if (FEAD_CONDUCTOR_IS_GET(command)) {
@@ -99,9 +98,6 @@ public:
 			}
 		}
 	}
-
-public:
-	static Conductor<vocab_t> *self;
 	
 protected:
 	Master<vocab_t> mMaster;
@@ -112,8 +108,5 @@ protected:
 
 	Type mExpectingType;
 };
-
-template <typename vocab_t>
-Conductor<vocab_t>* Conductor<vocab_t>::self = nullptr;
 	
 }

@@ -48,6 +48,7 @@
 		UDR##n = *ptr++;									   \
 	}														   \
 	loop_until_bit_is_set(UCSR##n##A, TXC##n);				   \
+	_delay_us(60);											   \
 	sei();
 
 namespace fead {
@@ -57,50 +58,20 @@ public:
 	SerialUnit() = default;
 	virtual ~SerialUnit() = default;
 	
-	void open(uint8_t number) {
-		mUnitNumber = number;
-		
-		switch (mUnitNumber) {
-		case 0:FEAD_INIT_SERIAL(0); break;
-#ifdef UART_1_AVAILABLE
-		case 1:FEAD_INIT_SERIAL(1); break;
-#endif
-#ifdef UART_2_AVAILABLE
-		case 2:FEAD_INIT_SERIAL(2); break;
-#endif
-#ifdef UART_3_AVAILABLE
-		case 3:FEAD_INIT_SERIAL(3); break;
-#endif			
-		default: FEAD_INIT_SERIAL(0); break;
-		}
-
-		SerialUnit::sUnits[number] = this;
-		sei();
-
-	}
-
-	void send(const Packet &packet) const {
-		switch (mUnitNumber) {
-		case 0: { FEAD_SEND_PACKET(0, packet); break; }
-#ifdef UART_1_AVAILABLE
-		case 1: { FEAD_SEND_PACKET(1, packet); break; }
-#endif
-#ifdef UART_2_AVAILABLE
-		case 2: { FEAD_SEND_PACKET(2, packet); break; }
-#endif
-#ifdef UART_3_AVAILABLE
-		case 3: { FEAD_SEND_PACKET(3, packet); break; }
-#endif			
-		default: { FEAD_SEND_PACKET(0, packet); break; }
-		}
-	}
-
+	void open(uint8_t number);
+	void send(const Packet &packet) const;
+	
+	void setDePin(uint8_t pin);
+	
+public:	
 	virtual void receive(uint8_t status, uint8_t data) = 0;
 
+public:
 	static SerialUnit *sUnits[4];
 
 protected:
 	uint8_t mUnitNumber;
+	uint8_t mDePin;
 };
 
 }

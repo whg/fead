@@ -17,6 +17,8 @@
 #define FEAD_SLAVE_MAX_DMX_CHANNELS 8
 #endif
 
+#define FEAD_SLAVE_UNASSIGNED_ADDRESS 0xff
+
 namespace fead {
 
 struct dmx_receiver_t {
@@ -25,24 +27,22 @@ struct dmx_receiver_t {
 	uint8_t *ptr;
 };
 
-template <typename T>
-using get_handler_t = Response<T> (*)(const Request<T> &req);
 
-template <typename T>
-using set_handler_t = bool (*)(const Request<T> &req);
-
-	
-enum { FEAD_SLAVE_NO_ADDRESS = 0xff }; //
-	
 template <typename vocab_t>
 class Slave : public SerialUnit {
 public:
-	Slave(uint8_t address=FEAD_SLAVE_NO_ADDRESS):
+	class RequestHandler {
+	public:
+		virtual Response<vocab_t> get(const Request<vocab_t> &req) = 0;
+		virtual bool set(const Request<vocab_t> &req) = 0;
+	};
+	
+public:
+	Slave(uint8_t address=FEAD_SLAVE_UNASSIGNED_ADDRESS):
 		mAddress(address),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
-		mGetHandler(nullptr),
-		mSetHandler(nullptr)
+		mRequestHandler(nullptr)
 	{}
 	
 	virtual ~Slave() {}
@@ -70,16 +70,12 @@ public:
 		mAddress = address;
 	}
 
-	void setGetHandler(get_handler_t<vocab_t> handler) {
-		mGetHandler = handler;
+	void setHandler(RequestHandler* const handler) {
+		mRequestHandler = handler;
 	}
-
-	void setSetHandler(set_handler_t<vocab_t> handler) {
-		mSetHandler = handler;
-	}
-
 
 	void update() {
+
 		uint8_t dmxValueIndex = 0;
 		for (uint8_t i = 0; i < mDmxNumReceivers; i++) {
 			auto *receiver = &mDmxReceivers[i];
@@ -89,25 +85,19 @@ public:
 		}
 
 		if (mFeadBufferReady) {
-			if (mFeadPacket.isValid(mAddress)) {
+			if (mFeadPacket.isValid(mAddress) && mRequestHandler) {
 				uint8_t param = mFeadPacket.bits.param;
 				auto request = Request<vocab_t>(param, mFeadPacket.bits.payload);
-
+				
 				switch (mFeadPacket.bits.command) {
 				case Command::GET:
-					if (mGetHandler) {
-						auto response = mGetHandler(request);
-						reply(response);
-					}
+					reply(mRequestHandler->get(request));
 					break;
 				case Command::SET:
-					if (mSetHandler) {
-						auto success = mSetHandler(request);
-						if (success) {
-							auto response = Response<vocab_t>(param);
-							ack(response);
-						}
+					if (mRequestHandler->set(request)) {
+						ack(Response<vocab_t>(param));
 					}
+					break;
 				}
 			}
 
@@ -116,7 +106,6 @@ public:
 	}
 
 public:
-	uint8_t thing;
 	void receive(uint8_t status, uint8_t data) override {
 
 		if (status & (1<<FE0)) {			
@@ -126,7 +115,6 @@ public:
 		else {
 			if (mByteCounter == 0) {
 				mPacketType = data;
-				thing = data;
 			}
 			else if (mPacketType == FEAD_PACKET_TYPE_DMX) {
 				for (uint8_t i = 0; i < mDmxChannelCounter; i++) {
@@ -168,8 +156,7 @@ protected:
 	volatile packet_type_t mPacketType;
 
 protected:
-	get_handler_t<vocab_t> mGetHandler;
-	set_handler_t<vocab_t> mSetHandler;
+	RequestHandler *mRequestHandler;
 };
 
 using DmxSlave = Slave<uint8_t>; // is this good?
