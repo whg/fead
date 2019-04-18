@@ -5,7 +5,7 @@
 #include "fead/master.hpp"
 #include "fead/hardware.hpp"
 
-#define FEAD_CONDUCTOR_BAUD 38400
+#define FEAD_CONDUCTOR_BAUD 250000ul
 #define FEAD_CONDUCTOR_RX_BUFFER_SIZE 64
 
 #define FEAD_CONDUCTOR_SEPARATOR ':'
