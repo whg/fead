@@ -79,7 +79,7 @@ public:
 		uint8_t dmxValueIndex = 0;
 		for (uint8_t i = 0; i < mDmxNumReceivers; i++) {
 			auto *receiver = &mDmxReceivers[i];
-			for (uint16_t j = receiver->numBytes - 1; j >= 0; j--) {
+			for (int16_t j = receiver->numBytes - 1; j >= 0; j--) {
 				receiver->ptr[j] = mDmxValues[dmxValueIndex++];
 			}
 		}
