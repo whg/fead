@@ -17,6 +17,11 @@
 #define FEAD_SLAVE_MAX_DMX_CHANNELS 8
 #endif
 
+#ifndef FEAD_SLAVE_RECEIVED_THRESHOLD
+#define FEAD_SLAVE_RECEIVED_THRESHOLD 1000
+#endif
+
+
 #define FEAD_SLAVE_UNASSIGNED_ADDRESS 0xff
 
 namespace fead {
@@ -42,7 +47,8 @@ public:
 		mAddress(address),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
-		mRequestHandler(nullptr)
+		mRequestHandler(nullptr),
+		mLastMessageTime(0)
 	{}
 	
 	virtual ~Slave() {}
@@ -74,6 +80,10 @@ public:
 		mRequestHandler = handler;
 	}
 
+	bool isReceiving() {
+		return mLastMessageTime > 0 && millis() - mLastMessageTime < FEAD_SLAVE_RECEIVED_THRESHOLD;
+	}
+
 	void update() {
 
 		uint8_t dmxValueIndex = 0;
@@ -84,6 +94,8 @@ public:
 			}
 		}
 
+		auto now = millis();
+		
 		if (mFeadBufferReady) {
 			if (mFeadPacket.isValid(mAddress) && mRequestHandler) {
 				uint8_t param = mFeadPacket.bits.param;
@@ -99,6 +111,8 @@ public:
 					}
 					break;
 				}
+
+				mLastMessageTime = now;
 			}
 
 			mFeadBufferReady = false;
@@ -157,6 +171,9 @@ protected:
 
 protected:
 	RequestHandler *mRequestHandler;
+
+protected:
+	uint32_t mLastMessageTime;
 };
 
 using DmxSlave = Slave<uint8_t>; // is this good?
