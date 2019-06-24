@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "fead/master.hpp"
 #include "fead/hardware.hpp"
@@ -26,8 +27,11 @@ template <typename vocab_t>
 class Conductor : public SerialUnit, public Master<vocab_t>::ReplyHandler {
 public:
 	Conductor():
-		mRxBufferReady(false)
-	{}
+		mRxBufferReady(false),
+		mRxByteCounter(0)
+	{
+		resetBuffer();
+	}
 
 	void init(uint8_t masterSerialUnit) {
 		mMaster.open(masterSerialUnit);
@@ -64,25 +68,44 @@ public:
 			int number = atoi(&mRxBuffer[1]);
 
 			char *nextStart = p + 1;
-			p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
-			*p = '\0';
-			
 			auto param = static_cast<vocab_t>(atoi(nextStart));
-			nextStart = p + 1;
+			
+			p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
+
+			if (p != NULL) {
+				*p = '\0';
+				nextStart = p + 1;
+			} else {
+				nextStart = NULL;
+			}
 
 			// uppercase characters are for floats
 			mExpectingType = command < 'a' ? Type::FLOAT32 : Type::INT32;
 			
 			if (FEAD_CONDUCTOR_IS_GET(command)) {
-				mMaster.get(number, Request<vocab_t>(param));
+				if (nextStart != NULL) {
+					int value = atoi(nextStart);
+					mMaster.get(number, Request<vocab_t>(param, value));
+				} else {
+					mMaster.get(number, Request<vocab_t>(param));
+				}
+				
 			} else if (FEAD_CONDUCTOR_IS_SET(command)) {
 				// TODO: set float too
+
 				int value = atoi(nextStart);
-				mMaster.set(number, Request<vocab_t>(param, value));
+				bool extraValue = false;			
+				p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
+
+				if (p != NULL) {
+					auto extraValue = atoi(p + 1);
+					mMaster.set(number, Request<vocab_t>(param, value, extraValue));
+				} else {
+					mMaster.set(number, Request<vocab_t>(param, value));
+				}
 			}
 			
-			mRxByteCounter = 0;
-			mRxBufferReady = false;
+			resetBuffer();
 		}
 	}
 
@@ -90,13 +113,19 @@ public:
 		data &= 127; // not sure why the MSB is set!
 		if (!mRxBufferReady) {
 			if (data == FEAD_CONDUCTOR_TERMINATOR) {
-				mRxBuffer[mRxByteCounter++] = 0;
+				mRxBuffer[mRxByteCounter++] = '\0';
 				mRxBufferReady = true;
 			} else {
 				// we can overflow...
 				mRxBuffer[mRxByteCounter++] = data;
 			}
 		}
+	}
+
+	void resetBuffer() {
+		mRxByteCounter = 0;
+		mRxBufferReady = false;
+		memset(mRxBuffer, 0, FEAD_CONDUCTOR_RX_BUFFER_SIZE);
 	}
 	
 protected:
