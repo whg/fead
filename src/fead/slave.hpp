@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <avr/io.h>
+#include <EEPROM.h>
 
 #include "fead/hardware.hpp"
 #include "fead/message.hpp"
@@ -21,7 +22,6 @@
 #define FEAD_SLAVE_RECEIVED_THRESHOLD 1000
 #endif
 
-
 #define FEAD_SLAVE_UNASSIGNED_ADDRESS 0xff
 
 namespace fead {
@@ -32,7 +32,12 @@ struct dmx_receiver_t {
 	uint8_t *ptr;
 };
 
+enum EEPROMSlot {
+  UID = 200,
+  ADDRESS = 201,
+};
 
+	
 template <typename vocab_t>
 class Slave : public SerialUnit {
 public:
@@ -52,6 +57,13 @@ public:
 	{}
 	
 	virtual ~Slave() {}
+
+	void open(uint8_t number) override {
+		SerialUnit::open(number);
+		
+		EEPROM.get(EEPROMSlot::UID, mUid);
+		EEPROM.get(EEPROMSlot::ADDRESS, mAddress);
+	}
 	
 	void reply(const Response<vocab_t> &response) {
 		send(Packet::create(Command::REPLY, FEAD_MASTER_ADDRESS, response));
@@ -73,7 +85,10 @@ public:
 	}
 
 	void setAddress(uint8_t address) {
-		mAddress = address;
+		if (address != mAddress) {
+			mAddress = address;
+			EEPROM.put(EEPROMSlot::ADDRESS, mAddress);
+		}
 	}
 
 	void setHandler(RequestHandler* const handler) {
@@ -119,6 +134,9 @@ public:
 		}
 	}
 
+	uint8_t getUid() const { return mUid; }
+	uint8_t getAddress() const { return mAddress; }
+
 public:
 	void receive(uint8_t status, uint8_t data) override {
 
@@ -153,8 +171,7 @@ public:
 
 
 protected:
-	uint8_t mSerialUnit;
-	uint8_t mAddress;
+	uint8_t mUid, mAddress;
 	
 	dmx_receiver_t mDmxReceivers[FEAD_SLAVE_MAX_DMX_RECEIVERS];
 	uint8_t mDmxNumReceivers;

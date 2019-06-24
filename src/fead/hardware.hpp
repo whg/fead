@@ -58,7 +58,7 @@ public:
 	SerialUnit();
 	virtual ~SerialUnit() = default;
 	
-	void open(uint8_t number);
+	virtual void open(uint8_t number);
 	void send(const Packet &packet) const;
 	
 	void setDePin(uint8_t pin);
