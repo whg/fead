@@ -17,13 +17,14 @@ public:
 	Message(vocab_t param, uint32_t v): mParam(param) { setValue(v); }
 	Message(vocab_t param, int32_t v): mParam(param) { setValue(v); }
 	Message(vocab_t param, bool v): mParam(param) { setValue(v); }
+	Message(vocab_t param, uint8_t v): mParam(param) { setValue(v); }
 	
 	Message(vocab_t param, int16_t v1, int16_t v2): mParam(param) {
 		mData.int16s[0] = v1;
 		mData.int16s[1] = v2;
 	}
 
-	Message(uint8_t param, volatile uint8_t buffer[FEAD_MESSAGE_PAYLOAD_LENGTH]):
+	Message(vocab_t param, volatile uint8_t buffer[FEAD_MESSAGE_PAYLOAD_LENGTH]):
 		mParam(static_cast<vocab_t>(param))
 	{
 		memcpy(mData.buffer, buffer, FEAD_MESSAGE_PAYLOAD_LENGTH);

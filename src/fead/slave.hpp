@@ -23,6 +23,8 @@
 #endif
 
 #define FEAD_SLAVE_UNASSIGNED_ADDRESS 0xff
+#define FEAD_SLAVE_UID_PARAM 0xff
+#define FEAD_SLAVE_ADDR_PARAM 0xfe
 
 namespace fead {
 
@@ -113,20 +115,39 @@ public:
 		
 		if (mFeadBufferReady) {
 			if (mFeadPacket.isValid(mAddress) && mRequestHandler) {
-				uint8_t param = mFeadPacket.bits.param;
-				auto request = Request<vocab_t>(param, mFeadPacket.bits.payload);
-				
-				switch (mFeadPacket.bits.command) {
-				case Command::GET:
-					reply(mRequestHandler->get(request));
-					break;
-				case Command::SET:
-					if (mRequestHandler->set(request)) {
-						ack(Response<vocab_t>(param));
-					}
-					break;
-				}
+				auto param = static_cast<vocab_t>(mFeadPacket.bits.param);
 
+				// library based getters and setters
+				if (param == FEAD_SLAVE_UID_PARAM && mFeadPacket.bits.command == Command::GET) {
+					reply(Response<vocab_t>(param, mUid));
+				}
+				else if (param == FEAD_SLAVE_ADDR_PARAM) {
+					switch (mFeadPacket.bits.command) {
+					case Command::GET:
+						reply(Response<vocab_t>(param, mAddress));
+						break;
+					case Command::SET:
+						setAddress(mFeadPacket.bits.payload[0]);
+						ack(Response<vocab_t>(param));
+						break;
+					}
+				}
+				// user defined
+				else {
+					auto request = Request<vocab_t>(param, mFeadPacket.bits.payload);
+				
+					switch (mFeadPacket.bits.command) {
+					case Command::GET:
+						reply(mRequestHandler->get(request));
+						break;
+					case Command::SET:
+						if (mRequestHandler->set(request)) {
+							ack(Response<vocab_t>(param));
+						}
+						break;
+					}
+				}
+				
 				mLastMessageTime = now;
 			}
 
