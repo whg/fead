@@ -9,6 +9,7 @@
 #include "fead/packet.hpp"
 #include "fead/response.hpp"
 #include "fead/request.hpp"
+#include "fead/auto-params.hpp"
 
 #ifndef FEAD_SLAVE_MAX_DMX_RECEIVERS
 #define FEAD_SLAVE_MAX_DMX_RECEIVERS 5
@@ -23,8 +24,6 @@
 #endif
 
 #define FEAD_SLAVE_UNASSIGNED_ADDRESS 0xff
-#define FEAD_SLAVE_UID_PARAM 0xff
-#define FEAD_SLAVE_ADDR_PARAM 0xfe
 
 namespace fead {
 

@@ -5,6 +5,7 @@
 
 #include "fead/master.hpp"
 #include "fead/hardware.hpp"
+#include "fead/auto-params.hpp"
 
 #define FEAD_CONDUCTOR_BAUD 250000ul
 #define FEAD_CONDUCTOR_RX_BUFFER_SIZE 64
@@ -68,7 +69,16 @@ public:
 			int number = atoi(&mRxBuffer[1]);
 
 			char *nextStart = p + 1;
-			auto param = static_cast<vocab_t>(atoi(nextStart));
+			vocab_t param;
+			if (*nextStart == 'i') {
+				param = static_cast<vocab_t>(FEAD_SLAVE_UID_PARAM);
+			}
+			else if (*nextStart == 'a') {
+				param = static_cast<vocab_t>(FEAD_SLAVE_ADDR_PARAM);
+			}
+			else {
+				param = static_cast<vocab_t>(atoi(nextStart));
+			}
 			
 			p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
 
@@ -95,6 +105,7 @@ public:
 
 				int value = atoi(nextStart);
 				bool extraValue = false;			
+
 				p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
 
 				if (p != NULL) {
