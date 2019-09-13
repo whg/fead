@@ -16,7 +16,7 @@ class Master : public SerialUnit {
 public:
 	class ReplyHandler {
 	public:
-		virtual void received(const Response<vocab_t> &res) = 0;
+		virtual void received(const Response<vocab_t> &res, uint8_t sender) = 0;
 		virtual void acked() = 0;
 	};
 
@@ -49,7 +49,7 @@ public:
 					if (mReplyHandler) {
 						uint8_t param = mFeadPacket.bits.param;
 						auto response = Response<vocab_t>(param, mFeadPacket.bits.payload);
-						mReplyHandler->received(response);
+						mReplyHandler->received(response, mFeadPacket.bits.sender_address);
 					}
 					break;
 				case Command::ACK:

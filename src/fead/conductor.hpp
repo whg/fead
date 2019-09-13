@@ -44,7 +44,7 @@ public:
 		SerialUnit::sUnits[0] = this;
 	}
 
-	void received(const Response<vocab_t> &res) {
+	void received(const Response<vocab_t> &res, uint8_t sender) {
 		if (mExpectingType == Type::FLOAT32) {
 			Debug.println(res.asFloat32());
 		} else if (mExpectingType == Type::INT32) {
