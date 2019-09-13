@@ -45,11 +45,15 @@ public:
 	}
 
 	void received(const Response<vocab_t> &res, uint8_t sender) {
+		Debug.print('r');
+		Debug.print(sender);
+		Debug.print(FEAD_CONDUCTOR_SEPARATOR);
 		if (mExpectingType == Type::FLOAT32) {
-			Debug.println(res.asFloat32());
+			Debug.print(res.asFloat32());
 		} else if (mExpectingType == Type::INT32) {
-			Debug.println(res.asInt32());
+			Debug.print(res.asInt32());
 		}
+		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
 	}
 
 	void acked() {
