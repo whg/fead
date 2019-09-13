@@ -23,7 +23,7 @@
 #define FEAD_SLAVE_RECEIVED_THRESHOLD 1000
 #endif
 
-#define FEAD_SLAVE_UNASSIGNED_ADDRESS 0xff
+#define FEAD_SLAVE_UID_AS_ADDRESS 0xff
 
 namespace fead {
 
@@ -35,7 +35,6 @@ struct dmx_receiver_t {
 
 enum EEPROMSlot {
   UID = 200,
-  ADDRESS = 201,
 };
 
 	
@@ -49,7 +48,7 @@ public:
 	};
 	
 public:
-	Slave(uint8_t address=FEAD_SLAVE_UNASSIGNED_ADDRESS):
+	Slave(uint8_t address=FEAD_SLAVE_UID_AS_ADDRESS):
 		mAddress(address),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
@@ -63,7 +62,9 @@ public:
 		SerialUnit::open(number);
 		
 		EEPROM.get(EEPROMSlot::UID, mUid);
-		EEPROM.get(EEPROMSlot::ADDRESS, mAddress);
+		if (mAddress == FEAD_SLAVE_UID_AS_ADDRESS) {
+			mAddress = mUid;
+		}
 	}
 	
 	void reply(const Response<vocab_t> &response) {
@@ -86,10 +87,7 @@ public:
 	}
 
 	void setAddress(uint8_t address) {
-		if (address != mAddress) {
-			mAddress = address;
-			EEPROM.put(EEPROMSlot::ADDRESS, mAddress);
-		}
+		mAddress = address;
 	}
 
 	void setHandler(RequestHandler* const handler) {
@@ -192,6 +190,7 @@ public:
 
 protected:
 	uint8_t mUid, mAddress;
+	bool mUseUidAsAddress;
 	
 	dmx_receiver_t mDmxReceivers[FEAD_SLAVE_MAX_DMX_RECEIVERS];
 	uint8_t mDmxNumReceivers;
