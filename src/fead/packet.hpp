@@ -11,7 +11,7 @@
 #define FEAD_PACKET_HEADER 0xfe
 #define FEAD_PACKET_FOOTER 0xad
 
-#define FEAD_PACKET_LENGTH 10
+#define FEAD_PACKET_LENGTH 11
 
 #define FEAD_MASTER_ADDRESS 0
 
@@ -31,11 +31,12 @@ union Packet {
 	Packet() {}
 
     template <typename T>
-    static Packet create(Command c, uint8_t address, const Message<T> &msg) {
+    static Packet create(Command c, uint8_t sender, uint8_t destination, const Message<T> &msg) {
 		Packet output;
 		output.bits.header = FEAD_PACKET_HEADER;
 		output.bits.command = static_cast<uint8_t>(c);
-		output.bits.address = address;
+		output.bits.sender_address = sender;
+		output.bits.destination_address = destination;
 		output.bits.param = static_cast<uint8_t>(msg.getParam());
 		memcpy(output.bits.payload, msg.getPayloadBuffer(), FEAD_MESSAGE_PAYLOAD_LENGTH);
 		output.bits.checksum = get_checksum(&output.bits.payload[0]);
@@ -44,7 +45,7 @@ union Packet {
 	}
 
 	bool isValid(uint8_t address) volatile {
-		if (address != bits.address) {
+		if (address != bits.destination_address) {
 			return false;
 		}
 		uint8_t v = 0;
@@ -58,7 +59,7 @@ union Packet {
 	struct {
 		uint8_t header;
 		uint8_t command;
-		uint8_t address;
+		uint8_t sender_address, destination_address;
 		uint8_t param;
 		uint8_t payload[FEAD_MESSAGE_PAYLOAD_LENGTH];
 		uint8_t checksum;

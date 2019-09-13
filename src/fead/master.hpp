@@ -29,11 +29,11 @@ public:
 	virtual ~Master() {}
 	
 	void get(uint8_t unit, const Request<vocab_t> &request) {
-		send(Packet::create(Command::GET, unit, request));
+		send(Packet::create(Command::GET, FEAD_MASTER_ADDRESS, unit, request));
 	}
 
 	void set(uint8_t unit, const Request<vocab_t> &request) {
-		send(Packet::create(Command::SET, unit, request));
+		send(Packet::create(Command::SET, FEAD_MASTER_ADDRESS, unit, request));
 	}
 
 	void setHandler(ReplyHandler* const handler) {

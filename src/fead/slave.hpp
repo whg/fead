@@ -67,11 +67,11 @@ public:
 	}
 	
 	void reply(const Response<vocab_t> &response) {
-		send(Packet::create(Command::REPLY, FEAD_MASTER_ADDRESS, response));
+		send(Packet::create(Command::REPLY, mAddress, FEAD_MASTER_ADDRESS, response));
 	}
 
 	void ack(const Response<vocab_t> &response) {
-		send(Packet::create(Command::ACK, FEAD_MASTER_ADDRESS, response));
+		send(Packet::create(Command::ACK, mAddress, FEAD_MASTER_ADDRESS, response));
 	}
 
 	template <typename T>
