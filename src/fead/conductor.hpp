@@ -7,7 +7,7 @@
 #include "fead/hardware.hpp"
 #include "fead/auto-params.hpp"
 
-#define FEAD_CONDUCTOR_BAUD 250000ul
+#define FEAD_CONDUCTOR_DEFAULT_BAUD 38400ul
 #define FEAD_CONDUCTOR_RX_BUFFER_SIZE 64
 
 #define FEAD_CONDUCTOR_SEPARATOR ':'
@@ -34,12 +34,12 @@ public:
 		resetBuffer();
 	}
 
-	void init(uint8_t masterSerialUnit) {
+	void init(uint8_t masterSerialUnit, uint16_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
 		mMaster.open(masterSerialUnit);
 		mMaster.setHandler(this);
 		
 		// conductor always is on USB port
-		Debug.begin(FEAD_CONDUCTOR_BAUD);
+		Debug.begin(baud);
 		UCSR0B |= (1<<RXEN0) | (1<<RXCIE0);
 		SerialUnit::sUnits[0] = this;
 	}
