@@ -139,7 +139,7 @@ public:
 						break;
 					case Command::SET:
 						if (mRequestHandler->set(request)) {
-							ack(Response<vocab_t>(param));
+							ack(request);
 						}
 						break;
 					}

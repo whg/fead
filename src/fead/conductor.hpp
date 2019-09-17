@@ -58,8 +58,8 @@ public:
 		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
 	}
 
-	void acked() {
-		Debug.println('=');
+	void acked(const Response<vocab_t> &res, uint8_t sender) {
+		received(res, sender);
 	}
 
 	void update() {

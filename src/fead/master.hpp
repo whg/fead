@@ -17,7 +17,7 @@ public:
 	class ReplyHandler {
 	public:
 		virtual void received(const Response<vocab_t> &res, uint8_t sender) = 0;
-		virtual void acked() = 0;
+		virtual void acked(const Response<vocab_t> &res, uint8_t sender) = 0;
 	};
 
 public:
@@ -44,17 +44,18 @@ public:
 		if (mFeadBufferReady) {
 			
 			if (mFeadPacket.isValid(FEAD_MASTER_ADDRESS)) {
+				uint8_t param = mFeadPacket.bits.param;
+				auto response = Response<vocab_t>(param, mFeadPacket.bits.payload);
+
 				switch (mFeadPacket.bits.command) {
 				case Command::REPLY:
 					if (mReplyHandler) {
-						uint8_t param = mFeadPacket.bits.param;
-						auto response = Response<vocab_t>(param, mFeadPacket.bits.payload);
 						mReplyHandler->received(response, mFeadPacket.bits.sender_address);
 					}
 					break;
 				case Command::ACK:
 					if (mReplyHandler) {
-						mReplyHandler->acked();
+						mReplyHandler->acked(response, mFeadPacket.bits.sender_address);
 					}
 					break;
 				}
