@@ -48,6 +48,8 @@ public:
 		Debug.print('r');
 		Debug.print(sender);
 		Debug.print(FEAD_CONDUCTOR_SEPARATOR);
+		Debug.print(static_cast<int>(res.getParam()));
+		Debug.print(FEAD_CONDUCTOR_SEPARATOR);
 		if (mExpectingType == Type::FLOAT32) {
 			Debug.print(res.asFloat32());
 		} else if (mExpectingType == Type::INT32) {
