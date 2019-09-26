@@ -42,12 +42,15 @@ public:
 
 	void update() {
 		if (mFeadBufferReady) {
+			auto *packet = const_cast<Packet*>(&mFeadPacket);
 			
-			if (mFeadPacket.isValid(FEAD_MASTER_ADDRESS)) {
-				auto *packet = const_cast<Packet*>(&mFeadPacket);
-				auto response = Response<vocab_t>(packet->bits.param, packet->bits.payload, packet->getNumArgs());
+			if (packet->isValid(FEAD_MASTER_ADDRESS)) {
+				auto response = Response<vocab_t>(packet->bits.param,
+												  packet->bits.payload,
+												  packet->getNumArgs(),
+												  packet->getArgType());
 				
-				switch (packet->bits.command) {
+				switch (packet->getCommand()) {
 				case Command::REPLY:
 					if (mReplyHandler) {
 						mReplyHandler->received(response, packet->bits.sender_address);

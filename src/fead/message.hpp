@@ -7,37 +7,38 @@
 #define FEAD_MESSAGE_VALUE_NOT_SET 0xff
 
 namespace fead {
+
+enum class ArgType { NONE, INT16, FLOAT, UINT32, INT32, BOOL, UINT8 }; // don't go over 8
 	
 template <typename vocab_t>
 class Message {
 public:
-	Message(vocab_t param):
-		mParam(param)
-	{
-		mData.uint32 = 0;
-		mNumArgs = 0;
-	}
+	
+public:
+	Message(vocab_t param): mParam(param), mNumArgs(0), mArgType(ArgType::NONE) { mData.uint32 = 0; }
 
-	Message(vocab_t param, int v): mParam(param) { setValue(v); }
-	Message(vocab_t param, float v): mParam(param) { setValue(v); }
-	Message(vocab_t param, uint32_t v): mParam(param) { setValue(v); }
-	Message(vocab_t param, int32_t v): mParam(param) { setValue(v); }
-	Message(vocab_t param, bool v): mParam(param) { setValue(v); }
-	Message(vocab_t param, uint8_t v): mParam(param) { setValue(v); }
+	Message(vocab_t param, int v): mParam(param), mArgType(ArgType::INT16) { setValue(v); }
+	Message(vocab_t param, float v): mParam(param), mArgType(ArgType::FLOAT) { setValue(v); }
+	Message(vocab_t param, uint32_t v): mParam(param), mArgType(ArgType::UINT32) { setValue(v); }
+	Message(vocab_t param, int32_t v): mParam(param), mArgType(ArgType::INT32) { setValue(v); }
+	Message(vocab_t param, bool v): mParam(param), mArgType(ArgType::BOOL) { setValue(v); }
+	Message(vocab_t param, uint8_t v): mParam(param), mArgType(ArgType::UINT8) { setValue(v); }
 	
 	Message(vocab_t param, int16_t v1, int16_t v2):
-		mParam(param)
+		mParam(param),
+		mNumArgs(2),
+		mArgType(ArgType::INT16)
 	{
 		mData.int16s[0] = v1;
 		mData.int16s[1] = v2;
-		mNumArgs = 2;
 	}
 
-	Message(vocab_t param, uint8_t buffer[FEAD_MESSAGE_PAYLOAD_LENGTH], uint8_t numArgs):
-		mParam(param)
+	Message(vocab_t param, uint8_t buffer[FEAD_MESSAGE_PAYLOAD_LENGTH], uint8_t numArgs, ArgType argType):
+		mParam(param),
+		mNumArgs(numArgs),
+		mArgType(argType)
 	{
 		memcpy(mData.buffer, buffer, FEAD_MESSAGE_PAYLOAD_LENGTH);
-		mNumArgs = numArgs;
 	}
 	
 	virtual ~Message() {}
@@ -54,6 +55,7 @@ public:
 	const uint8_t* getPayloadBuffer() const { return mData.buffer; }
 
 	int32_t asInt32() const { return mData.int32; }
+	uint32_t asUint32() const { return mData.uint32; }
 	float asFloat32() const { return mData.float32; }
 	float asFloat() const { return asFloat32(); }
 	int asInt() const { return static_cast<int>(mData.int32); }
@@ -67,6 +69,7 @@ public:
 	}
 
 	uint8_t getNumArgs() const { return mNumArgs; }
+	ArgType getArgType() const { return mArgType; }
 	
 protected:
 	vocab_t mParam;
@@ -81,6 +84,7 @@ protected:
 		int16_t int16s[2];
 	} mData;
 	uint8_t mNumArgs;
+	ArgType mArgType;
 };
 	
 }

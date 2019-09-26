@@ -15,14 +15,14 @@
 
 #define FEAD_MASTER_ADDRESS 0
 
-#define FEAD_COMMAND_PAYLOAD_NUM_MASK 0b11100000
 #define FEAD_COMMAND_PAYLOAD_NUM_SHIFT 5
+#define FEAD_COMMAND_ARG_TYPE_SHIFT 2
 
 namespace fead {
 
 using packet_type_t = uint8_t;
 	
-enum Command { SET = 3, GET, REPLY, ACK };
+enum Command { SET, GET, REPLY, ACK }; // don't go over 4
 
 inline uint8_t get_checksum(const uint8_t *buffer) {
 	uint8_t cs = 0;
@@ -37,7 +37,9 @@ union Packet {
     static Packet create(Command c, uint8_t sender, uint8_t destination, const Message<T> &msg) {
 		Packet output;
 		output.bits.header = FEAD_PACKET_HEADER;
-		output.bits.command = static_cast<uint8_t>(c) | (msg.getNumArgs() << FEAD_COMMAND_PAYLOAD_NUM_SHIFT);
+		output.bits.command = static_cast<uint8_t>(c);
+		output.bits.command |= (msg.getNumArgs() << FEAD_COMMAND_PAYLOAD_NUM_SHIFT);
+		output.bits.command |= (static_cast<uint8_t>(msg.getArgType()) << FEAD_COMMAND_ARG_TYPE_SHIFT);
 		output.bits.sender_address = sender;
 		output.bits.destination_address = destination;
 		output.bits.param = static_cast<uint8_t>(msg.getParam());
@@ -47,7 +49,7 @@ union Packet {
 		return output;
 	}
 
-	bool isValid(uint8_t address) volatile {
+	bool isValid(uint8_t address) const {
 		if (address != bits.destination_address) {
 			return false;
 		}
@@ -57,9 +59,13 @@ union Packet {
 		}
 		return v == bits.checksum;
 	}
-
-	uint8_t getNumArgs() const { return bits.command >> FEAD_COMMAND_PAYLOAD_NUM_SHIFT; }
-
+	
+	Command getCommand() const { return static_cast<Command>(bits.command & 3); }
+	uint8_t getNumArgs() const { return (bits.command >> FEAD_COMMAND_PAYLOAD_NUM_SHIFT) & 7; }
+	ArgType getArgType() const {
+		return static_cast<ArgType>((bits.command >> FEAD_COMMAND_ARG_TYPE_SHIFT) & 7);
+	}
+	
 	uint8_t buffer[FEAD_PACKET_LENGTH];
 	struct {
 		uint8_t header;

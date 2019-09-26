@@ -21,8 +21,6 @@
 	((command & FEAD_CONDUCTOR_SET_MASK) == FEAD_CONDUCTOR_SET_MASK)
 
 namespace fead {
-
-enum class Type { FLOAT32, INT32 };
 	
 template <typename vocab_t>
 class Conductor : public SerialUnit, public Master<vocab_t>::ReplyHandler {
@@ -50,21 +48,35 @@ public:
 		Debug.print(FEAD_CONDUCTOR_SEPARATOR);
 		Debug.print(static_cast<int>(res.getParam()));
 		Debug.print(FEAD_CONDUCTOR_SEPARATOR);
-		if (mExpectingType == Type::FLOAT32) {
-			Debug.print(res.asFloat32());
-		} else if (mExpectingType == Type::INT32) {
-			switch (res.getNumArgs()) {
-			case 1:
+		if (res.getNumArgs() == 1) {
+			switch (res.getArgType()) {
+			case ArgType::FLOAT:
+				Debug.print(res.asFloat());
+				break;
+			case ArgType::INT32:
 				Debug.print(res.asInt32());
 				break;
-			case 2:
+			case ArgType::INT16:
+				Debug.print(res.asInt16());
+				break;
+			case ArgType::BOOL:
+				Debug.print(res.asBool());
+				break;
+			case ArgType::UINT8:
+			case ArgType::UINT32:
+				Debug.print(int(res.asUint32()));
+				break;
+			}
+		} else if (res.getNumArgs() == 2) {
+			switch (res.getArgType()) {
+			case ArgType::INT16:
 				Debug.print(res.asInt16(0));
 				Debug.print(FEAD_CONDUCTOR_SEPARATOR);
 				Debug.print(res.asInt16(1));
 				break;
 			}
-
 		}
+			
 		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
 	}
 
@@ -104,9 +116,6 @@ public:
 			} else {
 				nextStart = NULL;
 			}
-
-			// uppercase characters are for floats
-			mExpectingType = command < 'a' ? Type::FLOAT32 : Type::INT32;
 			
 			if (FEAD_CONDUCTOR_IS_GET(command)) {
 				if (nextStart != NULL) {
@@ -161,8 +170,6 @@ protected:
     volatile bool mRxBufferReady;
 	uint8_t mRxBuffer[FEAD_CONDUCTOR_RX_BUFFER_SIZE];
 	volatile uint8_t mRxByteCounter;
-
-	Type mExpectingType;
 };
 	
 }
