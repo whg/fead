@@ -34,7 +34,7 @@ public:
 		resetBuffer();
 	}
 
-	void init(uint8_t masterSerialUnit, uint16_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
+	void init(uint8_t masterSerialUnit, uint32_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
 		mMaster.open(masterSerialUnit);
 		mMaster.setHandler(this);
 		
