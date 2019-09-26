@@ -44,18 +44,18 @@ public:
 		if (mFeadBufferReady) {
 			
 			if (mFeadPacket.isValid(FEAD_MASTER_ADDRESS)) {
-				uint8_t param = mFeadPacket.bits.param;
-				auto response = Response<vocab_t>(param, mFeadPacket.bits.payload);
-
-				switch (mFeadPacket.bits.command) {
+				auto *packet = const_cast<Packet*>(&mFeadPacket);
+				auto response = Response<vocab_t>(packet->bits.param, packet->bits.payload, packet->getNumArgs());
+				
+				switch (packet->bits.command) {
 				case Command::REPLY:
 					if (mReplyHandler) {
-						mReplyHandler->received(response, mFeadPacket.bits.sender_address);
+						mReplyHandler->received(response, packet->bits.sender_address);
 					}
 					break;
 				case Command::ACK:
 					if (mReplyHandler) {
-						mReplyHandler->acked(response, mFeadPacket.bits.sender_address);
+						mReplyHandler->acked(response, packet->bits.sender_address);
 					}
 					break;
 				}

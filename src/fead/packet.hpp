@@ -15,6 +15,9 @@
 
 #define FEAD_MASTER_ADDRESS 0
 
+#define FEAD_COMMAND_PAYLOAD_NUM_MASK 0b11100000
+#define FEAD_COMMAND_PAYLOAD_NUM_SHIFT 5
+
 namespace fead {
 
 using packet_type_t = uint8_t;
@@ -34,7 +37,7 @@ union Packet {
     static Packet create(Command c, uint8_t sender, uint8_t destination, const Message<T> &msg) {
 		Packet output;
 		output.bits.header = FEAD_PACKET_HEADER;
-		output.bits.command = static_cast<uint8_t>(c);
+		output.bits.command = static_cast<uint8_t>(c) | (msg.getNumArgs() << FEAD_COMMAND_PAYLOAD_NUM_SHIFT);
 		output.bits.sender_address = sender;
 		output.bits.destination_address = destination;
 		output.bits.param = static_cast<uint8_t>(msg.getParam());
@@ -54,7 +57,9 @@ union Packet {
 		}
 		return v == bits.checksum;
 	}
-	
+
+	uint8_t getNumArgs() const { return bits.command >> FEAD_COMMAND_PAYLOAD_NUM_SHIFT; }
+
 	uint8_t buffer[FEAD_PACKET_LENGTH];
 	struct {
 		uint8_t header;

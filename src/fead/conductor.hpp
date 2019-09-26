@@ -53,7 +53,17 @@ public:
 		if (mExpectingType == Type::FLOAT32) {
 			Debug.print(res.asFloat32());
 		} else if (mExpectingType == Type::INT32) {
-			Debug.print(res.asInt32());
+			switch (res.getNumArgs()) {
+			case 1:
+				Debug.print(res.asInt32());
+				break;
+			case 2:
+				Debug.print(res.asInt16(0));
+				Debug.print(FEAD_CONDUCTOR_SEPARATOR);
+				Debug.print(res.asInt16(1));
+				break;
+			}
+
 		}
 		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
 	}
