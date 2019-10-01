@@ -125,13 +125,16 @@ public:
 						break;
 					case Command::SET:
 						setAddress(mFeadPacket.bits.payload[0]);
-						ack(Response<vocab_t>(param));
+						ack(Response<vocab_t>(param, mAddress));
 						break;
 					}
 				}
 				// user defined
 				else {
-					auto request = Request<vocab_t>(param, mFeadPacket.bits.payload);
+					auto request = Request<vocab_t>(mFeadPacket.bits.param,
+													  mFeadPacket.bits.payload,
+													  mFeadPacket.getNumArgs(),
+													  mFeadPacket.getArgType());
 				
 					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
