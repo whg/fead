@@ -111,31 +111,29 @@ public:
 		auto now = millis();
 		
 		if (mFeadBufferReady) {
-			auto *packet = const_cast<const Packet*>(&mFeadPacket);
-			
-			if (packet->isValid(mAddress) && mRequestHandler) {
-				auto param = static_cast<vocab_t>(packet->bits.param);
+			if (mFeadPacket.isValid(mAddress) && mRequestHandler) {
+				auto param = static_cast<vocab_t>(mFeadPacket.bits.param);
 
 				// library based getters and setters
-				if (param == FEAD_SLAVE_UID_PARAM && packet->getCommand() == Command::GET) {
+				if (param == FEAD_SLAVE_UID_PARAM && mFeadPacket.getCommand() == Command::GET) {
 					reply(Response<vocab_t>(param, mUid));
 				}
 				else if (param == FEAD_SLAVE_ADDR_PARAM) {
-					switch (packet->getCommand()) {
+					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
 						reply(Response<vocab_t>(param, mAddress));
 						break;
 					case Command::SET:
-						setAddress(packet->bits.payload[0]);
+						setAddress(mFeadPacket.bits.payload[0]);
 						ack(Response<vocab_t>(param));
 						break;
 					}
 				}
 				// user defined
 				else {
-					auto request = Request<vocab_t>(param, packet->bits.payload);
+					auto request = Request<vocab_t>(param, mFeadPacket.bits.payload);
 				
-					switch (packet->getCommand()) {
+					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
 						reply(mRequestHandler->get(request));
 						break;

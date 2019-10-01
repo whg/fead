@@ -49,7 +49,7 @@ union Packet {
 		return output;
 	}
 
-	bool isValid(uint8_t address) const {
+	bool isValid(uint8_t address) const volatile {
 		if (address != bits.destination_address) {
 			return false;
 		}
@@ -60,9 +60,9 @@ union Packet {
 		return v == bits.checksum;
 	}
 	
-	Command getCommand() const { return static_cast<Command>(bits.command & 3); }
-	uint8_t getNumArgs() const { return (bits.command >> FEAD_COMMAND_PAYLOAD_NUM_SHIFT) & 7; }
-	ArgType getArgType() const {
+	Command getCommand() const volatile { return static_cast<Command>(bits.command & 3); }
+	uint8_t getNumArgs() const volatile { return (bits.command >> FEAD_COMMAND_PAYLOAD_NUM_SHIFT) & 7; }
+	ArgType getArgType() const volatile {
 		return static_cast<ArgType>((bits.command >> FEAD_COMMAND_ARG_TYPE_SHIFT) & 7);
 	}
 	
