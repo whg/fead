@@ -1,11 +1,11 @@
 #pragma once
 
 #define CREATE_FEAD_TYPES(prefix, vocab)						\
-	using prefix##Master  = fead::Master<vocab>;				\
-	using prefix##Slave   = fead::Slave<vocab>;					\
-	using prefix##Message = fead::Message<vocab>;				\
-	using prefix##Request = fead::Request<vocab>;				\
-	using prefix##Response = fead::Response<vocab>
+	using prefix##Master  = fead::MasterT<vocab>;				\
+	using prefix##Slave   = fead::SlaveT<vocab>;					\
+	using prefix##Message = fead::MessageT<vocab>;				\
+	using prefix##Request = fead::RequestT<vocab>;				\
+	using prefix##Response = fead::ResponseT<vocab>
 
 
 	

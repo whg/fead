@@ -11,20 +11,20 @@ namespace fead {
 enum class ArgType { NONE, INT16, FLOAT, UINT32, INT32, BOOL, UINT8 }; // don't go over 8
 	
 template <typename vocab_t>
-class Message {
+class MessageT {
 public:
 	
 public:
-	Message(vocab_t param): mParam(param), mNumArgs(0), mArgType(ArgType::NONE) { mData.uint32 = 0; }
+	MessageT(vocab_t param): mParam(param), mNumArgs(0), mArgType(ArgType::NONE) { mData.uint32 = 0; }
 
-	Message(vocab_t param, int v): mParam(param), mArgType(ArgType::INT16) { setValue(v); }
-	Message(vocab_t param, float v): mParam(param), mArgType(ArgType::FLOAT) { setValue(v); }
-	Message(vocab_t param, uint32_t v): mParam(param), mArgType(ArgType::UINT32) { setValue(v); }
-	Message(vocab_t param, int32_t v): mParam(param), mArgType(ArgType::INT32) { setValue(v); }
-	Message(vocab_t param, bool v): mParam(param), mArgType(ArgType::BOOL) { setValue(v); }
-	Message(vocab_t param, uint8_t v): mParam(param), mArgType(ArgType::UINT8) { setValue(v); }
+	MessageT(vocab_t param, int v): mParam(param), mArgType(ArgType::INT16) { setValue(v); }
+	MessageT(vocab_t param, float v): mParam(param), mArgType(ArgType::FLOAT) { setValue(v); }
+	MessageT(vocab_t param, uint32_t v): mParam(param), mArgType(ArgType::UINT32) { setValue(v); }
+	MessageT(vocab_t param, int32_t v): mParam(param), mArgType(ArgType::INT32) { setValue(v); }
+	MessageT(vocab_t param, bool v): mParam(param), mArgType(ArgType::BOOL) { setValue(v); }
+	MessageT(vocab_t param, uint8_t v): mParam(param), mArgType(ArgType::UINT8) { setValue(v); }
 	
-	Message(vocab_t param, int16_t v1, int16_t v2):
+	MessageT(vocab_t param, int16_t v1, int16_t v2):
 		mParam(param),
 		mNumArgs(2),
 		mArgType(ArgType::INT16)
@@ -33,7 +33,7 @@ public:
 		mData.int16s[1] = v2;
 	}
 
-	Message(vocab_t param, uint8_t buffer[FEAD_MESSAGE_PAYLOAD_LENGTH], uint8_t numArgs, ArgType argType):
+	MessageT(vocab_t param, uint8_t buffer[FEAD_MESSAGE_PAYLOAD_LENGTH], uint8_t numArgs, ArgType argType):
 		mParam(param),
 		mNumArgs(numArgs),
 		mArgType(argType)
@@ -41,7 +41,7 @@ public:
 		memcpy(mData.buffer, buffer, FEAD_MESSAGE_PAYLOAD_LENGTH);
 	}
 	
-	virtual ~Message() {}
+	virtual ~MessageT() {}
 
 	template <typename T>
 	void setValue(const T &v) {
@@ -86,5 +86,7 @@ protected:
 	uint8_t mNumArgs;
 	ArgType mArgType;
 };
-	
+
+using Message = MessageT<uint8_t>;
+
 }

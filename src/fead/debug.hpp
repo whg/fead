@@ -20,7 +20,7 @@ public:
 	template<typename T>
 	void println(T v) {
 		print(v);
-		print('\n');
+		print("\r\n");
 	}
 };
 

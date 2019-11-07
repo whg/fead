@@ -39,16 +39,16 @@ enum EEPROMSlot {
 
 	
 template <typename vocab_t>
-class Slave : public SerialUnit {
+class SlaveT : public SerialUnit {
 public:
 	class RequestHandler {
 	public:
-		virtual Response<vocab_t> get(const Request<vocab_t> &req) = 0;
-		virtual bool set(const Request<vocab_t> &req) = 0;
+		virtual ResponseT<vocab_t> get(const RequestT<vocab_t> &req) = 0;
+		virtual bool set(const RequestT<vocab_t> &req) = 0;
 	};
 	
 public:
-	Slave(uint8_t address=FEAD_SLAVE_UID_AS_ADDRESS):
+	SlaveT(uint8_t address=FEAD_SLAVE_UID_AS_ADDRESS):
 		mAddress(address),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
@@ -56,7 +56,7 @@ public:
 		mLastMessageTime(0)
 	{}
 	
-	virtual ~Slave() {}
+	virtual ~SlaveT() {}
 
 	void open(uint8_t number) override {
 		SerialUnit::open(number);
@@ -67,11 +67,11 @@ public:
 		}
 	}
 	
-	void reply(const Response<vocab_t> &response) {
+	void reply(const ResponseT<vocab_t> &response) {
 		send(Packet::create(Command::REPLY, mAddress, FEAD_MASTER_ADDRESS, response));
 	}
 
-	void ack(const Response<vocab_t> &response) {
+	void ack(const ResponseT<vocab_t> &response) {
 		send(Packet::create(Command::ACK, mAddress, FEAD_MASTER_ADDRESS, response));
 	}
 
@@ -116,25 +116,25 @@ public:
 
 				// library based getters and setters
 				if (param == FEAD_SLAVE_UID_PARAM && mFeadPacket.getCommand() == Command::GET) {
-					reply(Response<vocab_t>(param, mUid));
+					reply(ResponseT<vocab_t>(param, mUid));
 				}
 				else if (param == FEAD_SLAVE_ADDR_PARAM) {
 					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
-						reply(Response<vocab_t>(param, mAddress));
+						reply(ResponseT<vocab_t>(param, mAddress));
 						break;
 					case Command::SET:
 						setAddress(mFeadPacket.bits.payload[0]);
-						ack(Response<vocab_t>(param, mAddress));
+						ack(ResponseT<vocab_t>(param, mAddress));
 						break;
 					}
 				}
 				// user defined
 				else {
-					auto request = Request<vocab_t>(mFeadPacket.bits.param,
-													  mFeadPacket.bits.payload,
-													  mFeadPacket.getNumArgs(),
-													  mFeadPacket.getArgType());
+					auto request = RequestT<vocab_t>(mFeadPacket.bits.param,
+													 mFeadPacket.bits.payload,
+													 mFeadPacket.getNumArgs(),
+													 mFeadPacket.getArgType());
 				
 					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
@@ -215,6 +215,7 @@ protected:
 	uint32_t mLastMessageTime;
 };
 
-using DmxSlave = Slave<uint8_t>; // is this good?
+using DmxSlave = SlaveT<uint8_t>; // is this good?
+using Slave = SlaveT<uint8_t>;
 
 }

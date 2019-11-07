@@ -34,7 +34,7 @@ union Packet {
 	Packet() {}
 
     template <typename T>
-    static Packet create(Command c, uint8_t sender, uint8_t destination, const Message<T> &msg) {
+    static Packet create(Command c, uint8_t sender, uint8_t destination, const MessageT<T> &msg) {
 		Packet output;
 		output.bits.header = FEAD_PACKET_HEADER;
 		output.bits.command = static_cast<uint8_t>(c);

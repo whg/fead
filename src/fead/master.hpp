@@ -12,27 +12,27 @@
 namespace fead {
 
 template <typename vocab_t>
-class Master : public SerialUnit {
+class MasterT : public SerialUnit {
 public:
 	class ReplyHandler {
 	public:
-		virtual void received(const Response<vocab_t> &res, uint8_t sender) = 0;
-		virtual void acked(const Response<vocab_t> &res, uint8_t sender) = 0;
+		virtual void received(const ResponseT<vocab_t> &res, uint8_t sender) = 0;
+		virtual void acked(const ResponseT<vocab_t> &res, uint8_t sender) = 0;
 	};
 
 public:
-	Master():
+	MasterT():
 		mFeadBufferReady(false),
 		mReplyHandler(nullptr)
 	{}
 			
-	virtual ~Master() {}
+	virtual ~MasterT() {}
 	
-	void get(uint8_t unit, const Request<vocab_t> &request) {
+	void get(uint8_t unit, const RequestT<vocab_t> &request) {
 		send(Packet::create(Command::GET, FEAD_MASTER_ADDRESS, unit, request));
 	}
 
-	void set(uint8_t unit, const Request<vocab_t> &request) {
+	void set(uint8_t unit, const RequestT<vocab_t> &request) {
 		send(Packet::create(Command::SET, FEAD_MASTER_ADDRESS, unit, request));
 	}
 
@@ -43,7 +43,7 @@ public:
 	void update() {
 		if (mFeadBufferReady) {
 			if (mFeadPacket.isValid(FEAD_MASTER_ADDRESS)) {
-				auto response = Response<vocab_t>(mFeadPacket.bits.param,
+				auto response = ResponseT<vocab_t>(mFeadPacket.bits.param,
 												  mFeadPacket.bits.payload,
 												  mFeadPacket.getNumArgs(),
 												  mFeadPacket.getArgType());
@@ -101,5 +101,7 @@ protected:
 protected:
 	ReplyHandler *mReplyHandler;
 };
+
+using Master = MasterT<uint8_t>;
 	
 }

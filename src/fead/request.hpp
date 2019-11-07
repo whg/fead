@@ -5,6 +5,8 @@
 namespace fead {
 
 template<typename vocab_t>
-using Request = Message<vocab_t>;
+using RequestT = MessageT<vocab_t>;
+
+using Request = Message;
 
 }

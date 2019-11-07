@@ -23,9 +23,9 @@
 namespace fead {
 	
 template <typename vocab_t>
-class Conductor : public SerialUnit, public Master<vocab_t>::ReplyHandler {
+class ConductorT : public SerialUnit, public MasterT<vocab_t>::ReplyHandler {
 public:
-	Conductor():
+	ConductorT():
 		mRxBufferReady(false),
 		mRxByteCounter(0)
 	{
@@ -42,7 +42,7 @@ public:
 		SerialUnit::sUnits[0] = this;
 	}
 
-	void received(const Response<vocab_t> &res, uint8_t sender) {
+	void received(const ResponseT<vocab_t> &res, uint8_t sender) {
 		Debug.print('r');
 		Debug.print(sender);
 		Debug.print(FEAD_CONDUCTOR_SEPARATOR);
@@ -80,7 +80,7 @@ public:
 		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
 	}
 
-	void acked(const Response<vocab_t> &res, uint8_t sender) {
+	void acked(const ResponseT<vocab_t> &res, uint8_t sender) {
 		received(res, sender);
 	}
 
@@ -120,24 +120,24 @@ public:
 			if (FEAD_CONDUCTOR_IS_GET(command)) {
 				if (nextStart != NULL) {
 					int value = atoi(nextStart);
-					mMaster.get(number, Request<vocab_t>(param, value));
+					mMaster.get(number, RequestT<vocab_t>(param, value));
 				} else {
-					mMaster.get(number, Request<vocab_t>(param));
+					mMaster.get(number, RequestT<vocab_t>(param));
 				}
 				
 			} else if (FEAD_CONDUCTOR_IS_SET(command)) {
 				// TODO: set float too
 
 				int value = atoi(nextStart);
-				bool extraValue = false;			
+				bool extraValue = false;  // TODO: delete		
 
 				p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
 
 				if (p != NULL) {
 					auto extraValue = atoi(p + 1);
-					mMaster.set(number, Request<vocab_t>(param, value, extraValue));
+					mMaster.set(number, RequestT<vocab_t>(param, value, extraValue));
 				} else {
-					mMaster.set(number, Request<vocab_t>(param, value));
+					mMaster.set(number, RequestT<vocab_t>(param, value));
 				}
 			}
 			
@@ -165,11 +165,13 @@ public:
 	}
 	
 protected:
-	Master<vocab_t> mMaster;
+	MasterT<vocab_t> mMaster;
 
     volatile bool mRxBufferReady;
 	uint8_t mRxBuffer[FEAD_CONDUCTOR_RX_BUFFER_SIZE];
 	volatile uint8_t mRxByteCounter;
 };
+
+using Conductor = ConductorT<uint8_t>;
 	
 }
