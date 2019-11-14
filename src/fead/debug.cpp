@@ -3,6 +3,7 @@
 #include <avr/io.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 void _Debug::begin(uint32_t baud) {
     UBRR0L = static_cast<uint8_t>(roundf(F_CPU / (16.f * baud)) - 1);
@@ -29,10 +30,16 @@ void _Debug::print(int32_t n) {
     char buf[12]; // 2**32 == 10 digits
     char *str = &buf[11];
     *str = '\0';
+	uint32_t un = abs(n);
+	
     do {
-		*--str = (n % 10) + '0';
-		n /= 10;
-    } while(n);
+		*--str = (un % 10) + '0';
+		un /= 10;
+    } while(un);
+
+	if (n < 0) {
+		*--str = '-';
+	}
   
     print(str);
 }
