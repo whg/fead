@@ -5,7 +5,7 @@
 
 #include "fead/master.hpp"
 #include "fead/hardware.hpp"
-#include "fead/auto-params.hpp"
+#include "fead/slave.hpp"
 
 #define FEAD_CONDUCTOR_DEFAULT_BAUD 38400ul
 #define FEAD_CONDUCTOR_RX_BUFFER_SIZE 64
@@ -95,10 +95,10 @@ public:
 			char *nextStart = p + 1;
 			vocab_t param;
 			if (*nextStart == 'i') {
-				param = static_cast<vocab_t>(FEAD_SLAVE_UID_PARAM);
+				param = static_cast<vocab_t>(Slave::Param::UID);
 			}
 			else if (*nextStart == 'a') {
-				param = static_cast<vocab_t>(FEAD_SLAVE_ADDR_PARAM);
+				param = static_cast<vocab_t>(Slave::Param::ADDRESS);
 			}
 			else {
 				param = static_cast<vocab_t>(atoi(nextStart));

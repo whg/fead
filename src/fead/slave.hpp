@@ -9,7 +9,6 @@
 #include "fead/packet.hpp"
 #include "fead/response.hpp"
 #include "fead/request.hpp"
-#include "fead/auto-params.hpp"
 
 #ifndef FEAD_SLAVE_MAX_DMX_RECEIVERS
 #define FEAD_SLAVE_MAX_DMX_RECEIVERS 5
@@ -48,6 +47,11 @@ public:
 	protected:
 		SlaveT<vocab_t> *mSlaveRef = nullptr;
 		friend class SlaveT<vocab_t>;
+	};
+
+	enum Param {
+		UID = 255,
+		ADDRESS = 254,
 	};
 	
 public:
@@ -119,10 +123,10 @@ public:
 				auto param = static_cast<vocab_t>(mFeadPacket.bits.param);
 
 				// library based getters and setters
-				if (param == FEAD_SLAVE_UID_PARAM && mFeadPacket.getCommand() == Command::GET) {
+				if (param == Param::UID && mFeadPacket.getCommand() == Command::GET) {
 					reply(ResponseT<vocab_t>(param, mUid));
 				}
-				else if (param == FEAD_SLAVE_ADDR_PARAM) {
+				else if (param == Param::ADDRESS) {
 					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
 						reply(ResponseT<vocab_t>(param, mAddress));
