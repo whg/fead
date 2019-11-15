@@ -40,6 +40,14 @@ public:
 	{
 		memcpy(mData.buffer, buffer, FEAD_MESSAGE_PAYLOAD_LENGTH);
 	}
+
+	MessageT(int param):
+		mParam(static_cast<vocab_t>(param)),
+		mNumArgs(0),
+		mArgType(ArgType::NONE)
+	{
+		mData.uint32 = 0;
+	}
 	
 	virtual ~MessageT() {}
 
