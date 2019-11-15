@@ -17,7 +17,9 @@ public:
 	class ReplyHandler {
 	public:
 		virtual void received(const ResponseT<vocab_t> &res, uint8_t sender) = 0;
-		virtual void acked(const ResponseT<vocab_t> &res, uint8_t sender) = 0;
+	protected:
+		MasterT<vocab_t> *mMasterRef = nullptr;
+		friend class MasterT<vocab_t>;
 	};
 
 public:
@@ -38,6 +40,7 @@ public:
 
 	void setHandler(ReplyHandler* const handler) {
 		mReplyHandler = handler;
+		handler->mMasterRef = this;
 	}
 
 	void update() {
@@ -50,13 +53,9 @@ public:
 				
 				switch (mFeadPacket.getCommand()) {
 				case Command::REPLY:
-					if (mReplyHandler) {
-						mReplyHandler->received(response, mFeadPacket.bits.sender_address);
-					}
-					break;
 				case Command::ACK:
 					if (mReplyHandler) {
-						mReplyHandler->acked(response, mFeadPacket.bits.sender_address);
+						mReplyHandler->received(response, mFeadPacket.bits.sender_address);
 					}
 					break;
 				}

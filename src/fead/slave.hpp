@@ -45,6 +45,9 @@ public:
 	public:
 		virtual ResponseT<vocab_t> get(const RequestT<vocab_t> &req) = 0;
 		virtual bool set(const RequestT<vocab_t> &req) = 0;
+	protected:
+		SlaveT<vocab_t> *mSlaveRef = nullptr;
+		friend class SlaveT<vocab_t>;
 	};
 	
 public:
@@ -92,6 +95,7 @@ public:
 
 	void setHandler(RequestHandler* const handler) {
 		mRequestHandler = handler;
+		handler->mSlaveRef = this;
 	}
 
 	bool isReceiving() {

@@ -42,7 +42,7 @@ public:
 		SerialUnit::sUnits[0] = this;
 	}
 
-	void received(const ResponseT<vocab_t> &res, uint8_t sender) {
+	void received(const ResponseT<vocab_t> &res, uint8_t sender) override {
 		Debug.print('r');
 		Debug.print(sender);
 		Debug.print(FEAD_CONDUCTOR_SEPARATOR);
@@ -78,10 +78,6 @@ public:
 		}
 			
 		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
-	}
-
-	void acked(const ResponseT<vocab_t> &res, uint8_t sender) {
-		received(res, sender);
 	}
 
 	void update() {
