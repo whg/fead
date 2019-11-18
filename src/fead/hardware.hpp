@@ -34,13 +34,16 @@
 	UCSR##n##C = (1<<USBS##n) | (1<<UCSZ##n##1) | (1<<UCSZ##n##0)		\
 
 
+// the _delays() in here are mysterious
+// the loop_until_bit_is_set() doesn't seem to do much
+
 #define FEAD_SEND_PACKET(n, packet)							   \
 	cli();													   \
 	FEAD_SET_SERIAL_SPEED(n, FEAD_HALF_SPEED);				   \
 	UDR##n = 0;												   \
 	UCSR##n##A &=  ~(1<<TXC##n);							   \
 	loop_until_bit_is_set(UCSR##n##A, TXC##n);				   \
-	_delay_us(120);											   \
+	_delay_us(240);											   \
 	FEAD_SET_SERIAL_SPEED(n, FEAD_FULL_SPEED);				   \
 	uint8_t *ptr = &packet.buffer[0];						   \
 	for (uint8_t i = 0; i < FEAD_PACKET_LENGTH; i++) {		   \
@@ -48,7 +51,7 @@
 		UDR##n = *ptr++;									   \
 	}														   \
 	loop_until_bit_is_set(UCSR##n##A, TXC##n);				   \
-	_delay_us(60);											   \
+	_delay_us(120);											   \
 	sei();
 
 namespace fead {
