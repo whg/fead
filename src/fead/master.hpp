@@ -7,7 +7,9 @@
 #include "fead/response.hpp"
 #include "fead/packet.hpp"
 
+#ifdef FEAD_DEBUG
 #include "fead/debug.hpp"
+#endif
 
 namespace fead {
 
@@ -31,10 +33,24 @@ public:
 	virtual ~MasterT() {}
 	
 	void get(uint8_t unit, const RequestT<vocab_t> &request) {
+#ifdef DEBUG
+		Debug.print("g:");
+		Debug.print(unit);
+		Debug.print(":");
+		Debug.println(request.getParam());
+#endif
 		send(Packet::create(Command::GET, FEAD_MASTER_ADDRESS, unit, request));
 	}
 
 	void set(uint8_t unit, const RequestT<vocab_t> &request) {
+#ifdef DEBUG
+		Debug.print("s:");
+		Debug.print(unit);
+		Debug.print(":");
+		Debug.print(request.getParam());
+		Debug.print(":");
+		Debug.println(request.asInt());
+#endif
 		send(Packet::create(Command::SET, FEAD_MASTER_ADDRESS, unit, request));
 	}
 
@@ -55,6 +71,14 @@ public:
 				case Command::REPLY:
 				case Command::ACK:
 					if (mReplyHandler) {
+#ifdef DEBUG
+						Debug.print("r:");
+						Debug.print(mFeadPacket.bits.sender_address);
+						Debug.print(":");
+						Debug.print(response.getParam());
+						Debug.print(":");
+						Debug.println(response.asInt());
+#endif
 						mReplyHandler->received(response, mFeadPacket.bits.sender_address);
 					}
 					break;
