@@ -13,6 +13,7 @@
 
 #define FEAD_PACKET_LENGTH 11
 
+#define FEAD_BROADCAST_ADDRESS 0
 #define FEAD_MASTER_ADDRESS 255
 
 #define FEAD_COMMAND_PAYLOAD_NUM_SHIFT 5
@@ -40,8 +41,8 @@ union Packet {
 		output.bits.command = static_cast<uint8_t>(c);
 		output.bits.command |= (msg.getNumArgs() << FEAD_COMMAND_PAYLOAD_NUM_SHIFT);
 		output.bits.command |= (static_cast<uint8_t>(msg.getArgType()) << FEAD_COMMAND_ARG_TYPE_SHIFT);
-		output.bits.sender_address = sender;
-		output.bits.destination_address = destination;
+		output.bits.senderAddress = sender;
+		output.bits.destinationAddress = destination;
 		output.bits.param = static_cast<uint8_t>(msg.getParam());
 		memcpy(output.bits.payload, msg.getPayloadBuffer(), FEAD_MESSAGE_PAYLOAD_LENGTH);
 		output.bits.checksum = get_checksum(&output.bits.payload[0]);
@@ -50,7 +51,7 @@ union Packet {
 	}
 
 	bool isValid(uint8_t address) const volatile {
-		if (address != bits.destination_address) {
+		if (bits.destinationAddress != FEAD_BROADCAST_ADDRESS && address != bits.destinationAddress) {
 			return false;
 		}
 		uint8_t v = 0;
@@ -59,7 +60,9 @@ union Packet {
 		}
 		return v == bits.checksum;
 	}
-	
+
+	bool isBroadcast() const volatile { return bits.destinationAddress == FEAD_BROADCAST_ADDRESS; }
+
 	Command getCommand() const volatile { return static_cast<Command>(bits.command & 3); }
 	uint8_t getNumArgs() const volatile { return (bits.command >> FEAD_COMMAND_PAYLOAD_NUM_SHIFT) & 7; }
 	ArgType getArgType() const volatile {
@@ -70,7 +73,7 @@ union Packet {
 	struct {
 		uint8_t header;
 		uint8_t command;
-		uint8_t sender_address, destination_address;
+		uint8_t senderAddress, destinationAddress;
 		uint8_t param;
 		uint8_t payload[FEAD_MESSAGE_PAYLOAD_LENGTH];
 		uint8_t checksum;

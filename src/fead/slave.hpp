@@ -142,10 +142,12 @@ public:
 				
 					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
-						reply(mRequestHandler->get(request));
+						if (!mFeadPacket.isBroadcast()) {
+							reply(mRequestHandler->get(request));
+						}
 						break;
 					case Command::SET:
-						if (mRequestHandler->set(request)) {
+						if (mRequestHandler->set(request) && !mFeadPacket.isBroadcast()) {
 							reply(request);
 						}
 						break;

@@ -72,13 +72,13 @@ public:
 					if (mReplyHandler) {
 #ifdef DEBUG
 						Debug.print("r:");
-						Debug.print(mFeadPacket.bits.sender_address);
+						Debug.print(mFeadPacket.bits.senderAddress);
 						Debug.print(":");
 						Debug.print(response.getParam());
 						Debug.print(":");
 						Debug.println(response.asInt());
 #endif
-						mReplyHandler->received(response, mFeadPacket.bits.sender_address);
+						mReplyHandler->received(response, mFeadPacket.bits.senderAddress);
 					}
 					break;
 				}
