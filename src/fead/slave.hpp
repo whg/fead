@@ -78,10 +78,6 @@ public:
 		send(Packet::create(Command::REPLY, mAddress, FEAD_MASTER_ADDRESS, response));
 	}
 
-	void ack(const ResponseT<vocab_t> &response) {
-		send(Packet::create(Command::ACK, mAddress, FEAD_MASTER_ADDRESS, response));
-	}
-
 	template <typename T>
 	void receiveDMX(uint16_t channel, T *value) {
 		auto *receiver = &mDmxReceivers[mDmxNumReceivers++];
@@ -133,7 +129,7 @@ public:
 						break;
 					case Command::SET:
 						setAddress(mFeadPacket.bits.payload[0]);
-						ack(ResponseT<vocab_t>(param, mAddress));
+						reply(ResponseT<vocab_t>(param, mAddress));
 						break;
 					}
 				}
@@ -150,7 +146,7 @@ public:
 						break;
 					case Command::SET:
 						if (mRequestHandler->set(request)) {
-							ack(request);
+							reply(request);
 						}
 						break;
 					}

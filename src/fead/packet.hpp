@@ -22,7 +22,7 @@ namespace fead {
 
 using packet_type_t = uint8_t;
 	
-enum Command { SET, GET, REPLY, ACK }; // don't go over 4
+enum Command { SET, GET, REPLY }; // don't go over 4
 
 inline uint8_t get_checksum(const uint8_t *buffer) {
 	uint8_t cs = 0;

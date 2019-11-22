@@ -69,7 +69,6 @@ public:
 				
 				switch (mFeadPacket.getCommand()) {
 				case Command::REPLY:
-				case Command::ACK:
 					if (mReplyHandler) {
 #ifdef DEBUG
 						Debug.print("r:");

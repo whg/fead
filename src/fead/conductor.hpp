@@ -29,7 +29,7 @@ public:
 		mRxBufferReady(false),
 		mRxByteCounter(0)
 	{
-		resetBuffer();
+          resetBuffer();
 	}
 
 	void init(uint8_t masterSerialUnit, uint32_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
