@@ -30,7 +30,7 @@ void _Debug::print(int32_t n) {
     char buf[12]; // 2**32 == 10 digits
     char *str = &buf[11];
     *str = '\0';
-	uint32_t un = abs(n);
+	uint32_t un = labs(n);
 	
     do {
 		*--str = (un % 10) + '0';
