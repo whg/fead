@@ -13,8 +13,6 @@ enum class ArgType { NONE, INT16, FLOAT, UINT32, INT32, BOOL, UINT8 }; // don't 
 template <typename vocab_t>
 class MessageT {
 public:
-	
-public:
 	MessageT(vocab_t param): mParam(param), mNumArgs(0), mArgType(ArgType::NONE) { mData.uint32 = 0; }
 
 	MessageT(vocab_t param, int v): mParam(param), mArgType(ArgType::INT16) { setValue(v); }
@@ -43,6 +41,10 @@ public:
 	
 	virtual ~MessageT() {}
 
+	static MessageT<vocab_t> none() {
+		return MessageT<vocab_t>(static_cast<vocab_t>(0));
+	}
+
 	template <typename T>
 	void setValue(const T &v) {
 		memset(mData.buffer, 0, FEAD_MESSAGE_PAYLOAD_LENGTH);
@@ -70,6 +72,8 @@ public:
 
 	uint8_t getNumArgs() const { return mNumArgs; }
 	ArgType getArgType() const { return mArgType; }
+
+	bool isNone() const { return mArgType == ArgType::NONE; }
 	
 protected:
 	vocab_t mParam;

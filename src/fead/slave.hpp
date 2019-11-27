@@ -115,7 +115,7 @@ public:
 		auto now = millis();
 		
 		if (mFeadBufferReady) {
-			if (mFeadPacket.isValid(mAddress) && mRequestHandler) {
+			if (mFeadPacket.isValid(mAddress)) {
 				auto param = static_cast<vocab_t>(mFeadPacket.bits.param);
 
 				// library based getters and setters
@@ -134,7 +134,7 @@ public:
 					}
 				}
 				// user defined
-				else {
+				else if (mRequestHandler) {
 					auto request = RequestT<vocab_t>(mFeadPacket.bits.param,
 													 mFeadPacket.bits.payload,
 													 mFeadPacket.getNumArgs(),
@@ -143,7 +143,10 @@ public:
 					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
 						if (!mFeadPacket.isBroadcast()) {
-							reply(mRequestHandler->get(request));
+							auto response = mRequestHandler->get(request);
+							if (!response.isNone()) {
+								reply(response);
+							}
 						}
 						break;
 					case Command::SET:
