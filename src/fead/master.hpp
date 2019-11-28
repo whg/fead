@@ -33,7 +33,7 @@ public:
 	virtual ~MasterT() {}
 	
 	void get(uint8_t unit, const RequestT<vocab_t> &request) {
-#ifdef DEBUG
+#ifdef FEAD_DEBUG
 		Debug.print("g:");
 		Debug.print(unit);
 		Debug.print(":");
@@ -43,7 +43,7 @@ public:
 	}
 
 	void set(uint8_t unit, const RequestT<vocab_t> &request) {
-#ifdef DEBUG
+#ifdef FEAD_DEBUG
 		Debug.print("s:");
 		Debug.print(unit);
 		Debug.print(":");
@@ -70,7 +70,7 @@ public:
 				switch (mFeadPacket.getCommand()) {
 				case Command::REPLY:
 					if (mReplyHandler) {
-#ifdef DEBUG
+#ifdef FEAD_DEBUG
 						Debug.print("r:");
 						Debug.print(mFeadPacket.bits.senderAddress);
 						Debug.print(":");

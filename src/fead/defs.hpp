@@ -7,6 +7,5 @@
 	using prefix##Request = fead::RequestT<vocab>;				\
 	using prefix##Response = fead::ResponseT<vocab>
 
-#define MAKE_GET_CASE(key, value) case key: return Response(key, value)
+#define MAKE_GET_CASE(key, value) case key: return fead::Response(key, value)
 #define MAKE_SET_CASE(key, value, func) case key: value = req.func(); break;
-	
