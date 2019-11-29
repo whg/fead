@@ -60,7 +60,8 @@ public:
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
 		mRequestHandler(nullptr),
-		mLastMessageTime(0)
+		mLastMessageTime(0),
+		mResponseSendTime(0)
 	{}
 	
 	virtual ~SlaveT() {}
@@ -74,8 +75,14 @@ public:
 		}
 	}
 	
-	void reply(const ResponseT<vocab_t> &response) {
-		send(Packet::create(Command::REPLY, mAddress, FEAD_MASTER_ADDRESS, response));
+	void reply(const MessageT<vocab_t> &response) {
+		while (isReading());
+		SerialUnit::send(Packet::create(Command::REPLY, mAddress, FEAD_MASTER_ADDRESS, response));
+	}
+
+	void send(uint8_t address, const RequestT<vocab_t> &request) {
+		while (isReading());
+		SerialUnit::send(Packet::create(Command::REPLY, mAddress, address, request));
 	}
 
 	template <typename T>
@@ -142,16 +149,26 @@ public:
 				
 					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
-						if (!mFeadPacket.isBroadcast()) {
-							auto response = mRequestHandler->get(request);
-							if (!response.isNone()) {
+					{
+						auto response = mRequestHandler->get(request);
+						if (!response.isNone()) {
+							if (mFeadPacket.isBroadcast()) {
+								mQueuedResponse = response;
+								mResponseSendTime = now + mAddress * 2;
+							} else {
 								reply(response);
 							}
 						}
 						break;
+					}
 					case Command::SET:
-						if (mRequestHandler->set(request) && !mFeadPacket.isBroadcast()) {
-							reply(request);
+						if (mRequestHandler->set(request)) {
+							if (mFeadPacket.isBroadcast()) {
+								mQueuedResponse = request;
+								mResponseSendTime = now + mAddress * 2;
+							} else {
+								reply(request);
+							}
 						}
 						break;
 					}
@@ -162,6 +179,11 @@ public:
 
 			mFeadBufferReady = false;
 		}
+
+		if (mResponseSendTime && mResponseSendTime < now) {
+			reply(mQueuedResponse);
+			mResponseSendTime = 0;
+		}
 	}
 
 	uint8_t getUid() const { return mUid; }
@@ -169,7 +191,6 @@ public:
 
 public:
 	void receive(uint8_t status, uint8_t data) override {
-
 		if (status & (1<<FE0)) {			
 			mByteCounter = 0;
 			mPacketType = FEAD_PACKET_TYPE_NONE;
@@ -196,9 +217,10 @@ public:
 				mByteCounter++;
 			}
 		}
-		
 	}
 
+protected:
+	bool isReading() const { return mByteCounter < FEAD_PACKET_LENGTH && mByteCounter > 0; }
 
 protected:
 	uint8_t mUid, mAddress;
@@ -222,6 +244,11 @@ protected:
 
 protected:
 	uint32_t mLastMessageTime;
+
+protected:
+	ResponseT<vocab_t> mQueuedResponse;
+	uint32_t mResponseSendTime;
+	
 };
 
 using DmxSlave = SlaveT<uint8_t>; // is this good?

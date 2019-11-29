@@ -13,6 +13,7 @@ enum class ArgType { NONE, INT16, FLOAT, UINT32, INT32, BOOL, UINT8 }; // don't 
 template <typename vocab_t>
 class MessageT {
 public:
+	MessageT() = default;
 	MessageT(vocab_t param): mParam(param), mNumArgs(0), mArgType(ArgType::NONE) { mData.uint32 = 0; }
 
 	MessageT(vocab_t param, int v): mParam(param), mArgType(ArgType::INT16) { setValue(v); }

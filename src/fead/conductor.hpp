@@ -10,6 +10,10 @@
 #define FEAD_CONDUCTOR_DEFAULT_BAUD 38400ul
 #define FEAD_CONDUCTOR_RX_BUFFER_SIZE 64
 
+#ifndef FEAD_CONDUCTOR_REQUEST_QUEUE_LENGTH
+#define FEAD_CONDUCTOR_REQUEST_QUEUE_LENGTH 120
+#endif
+
 #define FEAD_CONDUCTOR_SEPARATOR ':'
 #define FEAD_CONDUCTOR_TERMINATOR '\n'
 #define FEAD_CONDUCTOR_GET_MASK 'G'
@@ -154,18 +158,21 @@ public:
 		}
 	}
 
+protected:
 	void resetBuffer() {
 		mRxByteCounter = 0;
 		mRxBufferReady = false;
 		memset(mRxBuffer, 0, FEAD_CONDUCTOR_RX_BUFFER_SIZE);
 	}
-	
+
 protected:
 	MasterT<vocab_t> mMaster;
 
     volatile bool mRxBufferReady;
 	uint8_t mRxBuffer[FEAD_CONDUCTOR_RX_BUFFER_SIZE];
 	volatile uint8_t mRxByteCounter;
+
+	// char mPrintBuffer[FEAD_CONDUCTOR_REQUEST_QUEUE_LENGTH * 
 };
 
 using Conductor = ConductorT<uint8_t>;

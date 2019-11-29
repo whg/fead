@@ -63,11 +63,16 @@ public:
 		if (mFeadBufferReady) {
 			if (mFeadPacket.isValid(FEAD_MASTER_ADDRESS)) {
 				auto response = ResponseT<vocab_t>(mFeadPacket.bits.param,
-												  mFeadPacket.bits.payload,
-												  mFeadPacket.getNumArgs(),
-												  mFeadPacket.getArgType());
+												   mFeadPacket.bits.payload,
+												   mFeadPacket.getNumArgs(),
+												   mFeadPacket.getArgType());
+
+				// grab these here and allow for more data to be received
+				auto command = mFeadPacket.getCommand();
+				auto sender = mFeadPacket.bits.senderAddress;
+				mFeadBufferReady = false;
 				
-				switch (mFeadPacket.getCommand()) {
+				switch (command) {
 				case Command::REPLY:
 					if (mReplyHandler) {
 #ifdef FEAD_DEBUG
@@ -78,13 +83,11 @@ public:
 						Debug.print(":");
 						Debug.println(response.asInt());
 #endif
-						mReplyHandler->received(response, mFeadPacket.bits.senderAddress);
+						mReplyHandler->received(response, sender);
 					}
 					break;
 				}
 			}
-
-			mFeadBufferReady = false;
 		}
 
 	}
