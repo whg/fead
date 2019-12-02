@@ -19,6 +19,8 @@
 #define FEAD_CONDUCTOR_GET_MASK 'G'
 #define FEAD_CONDUCTOR_SET_MASK 'S'
 
+#define TWO_TO_THE_15 32768
+
 #define FEAD_CONDUCTOR_IS_GET(command) \
 	((command & FEAD_CONDUCTOR_GET_MASK) == FEAD_CONDUCTOR_GET_MASK)
 #define FEAD_CONDUCTOR_IS_SET(command) \
@@ -119,7 +121,7 @@ public:
 			
 			if (FEAD_CONDUCTOR_IS_GET(command)) {
 				if (nextStart != NULL) {
-					int value = atoi(nextStart);
+					auto value = atoi(nextStart);
 					mMaster.get(number, RequestT<vocab_t>(param, value));
 				} else {
 					mMaster.get(number, RequestT<vocab_t>(param));
@@ -128,16 +130,20 @@ public:
 			} else if (FEAD_CONDUCTOR_IS_SET(command)) {
 				// TODO: set float too
 
-				int value = atoi(nextStart);
+				auto value = atol(nextStart);
 				bool extraValue = false;  // TODO: delete		
 
 				p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
 
 				if (p != NULL) {
 					auto extraValue = atoi(p + 1);
-					mMaster.set(number, RequestT<vocab_t>(param, value, extraValue));
+					mMaster.set(number, RequestT<vocab_t>(param, static_cast<int>(value), extraValue));
 				} else {
-					mMaster.set(number, RequestT<vocab_t>(param, value));
+					if (labs(value) > TWO_TO_THE_15) {
+						mMaster.set(number, RequestT<vocab_t>(param, value));
+					} else  {
+						mMaster.set(number, RequestT<vocab_t>(param, static_cast<int>(value)));
+					}
 				}
 			}
 			
