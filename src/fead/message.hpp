@@ -18,6 +18,7 @@ public:
 
 	MessageT(vocab_t param, int v): mParam(param), mArgType(ArgType::INT16) { setValue(v); }
 	MessageT(vocab_t param, float v): mParam(param), mArgType(ArgType::FLOAT) { setValue(v); }
+	MessageT(vocab_t param, double v): mParam(param), mArgType(ArgType::FLOAT) { setValue(v); }
 	MessageT(vocab_t param, uint32_t v): mParam(param), mArgType(ArgType::UINT32) { setValue(v); }
 	MessageT(vocab_t param, int32_t v): mParam(param), mArgType(ArgType::INT32) { setValue(v); }
 	MessageT(vocab_t param, bool v): mParam(param), mArgType(ArgType::BOOL) { setValue(v); }

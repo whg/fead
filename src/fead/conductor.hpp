@@ -129,20 +129,28 @@ public:
 				
 			} else if (FEAD_CONDUCTOR_IS_SET(command)) {
 				// TODO: set float too
-
-				auto value = atol(nextStart);
-				bool extraValue = false;  // TODO: delete		
-
+				auto longValue = atol(nextStart);
+				int intValue = static_cast<int>(longValue);
+				
 				p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
 
 				if (p != NULL) {
-					auto extraValue = atoi(p + 1);
-					mMaster.set(number, RequestT<vocab_t>(param, static_cast<int>(value), extraValue));
+					nextStart = p + 1;
+					if (strchr(nextStart, '.') != NULL) {
+						auto extraFloatValue = atof(nextStart);
+						mMaster.set(number, RequestT<vocab_t>(param, intValue, extraFloatValue));
+					} else {
+						auto extraIntValue = atoi(nextStart);
+						mMaster.set(number, RequestT<vocab_t>(param, intValue, extraIntValue));
+					}
 				} else {
-					if (labs(value) > TWO_TO_THE_15) {
-						mMaster.set(number, RequestT<vocab_t>(param, value));
-					} else  {
-						mMaster.set(number, RequestT<vocab_t>(param, static_cast<int>(value)));
+					if (labs(longValue) > TWO_TO_THE_15) {
+						mMaster.set(number, RequestT<vocab_t>(param, longValue));
+					} else if(strchr(nextStart, '.') != NULL) {
+						float floatValue = atof(nextStart);
+						mMaster.set(number, RequestT<vocab_t>(param, floatValue));
+					} else {
+						mMaster.set(number, RequestT<vocab_t>(param, intValue));
 					}
 				}
 			}
