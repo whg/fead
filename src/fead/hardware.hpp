@@ -53,18 +53,18 @@
 
 
 namespace fead {
-	
+
 class SerialUnit {
 public:
 	SerialUnit();
 	virtual ~SerialUnit() = default;
-	
+
 	virtual void open(uint8_t number);
 	void send(const Packet &packet) const;
-	
-	void setDePin(uint8_t pin);
-	
-public:	
+
+	virtual void setDePin(uint8_t pin);
+
+public:
 	virtual void receive(uint8_t status, uint8_t data) = 0;
 
 public:
@@ -76,4 +76,3 @@ protected:
 };
 
 }
-

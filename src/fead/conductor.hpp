@@ -27,7 +27,7 @@
 	((command & FEAD_CONDUCTOR_SET_MASK) == FEAD_CONDUCTOR_SET_MASK)
 
 namespace fead {
-	
+
 template <typename vocab_t>
 class ConductorT : public SerialUnit, public MasterT<vocab_t>::ReplyHandler {
 public:
@@ -41,11 +41,15 @@ public:
 	void init(uint8_t masterSerialUnit, uint32_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
 		mMaster.open(masterSerialUnit);
 		mMaster.setHandler(this);
-		
+
 		// conductor always is on USB port
 		Debug.begin(baud);
 		UCSR0B |= (1<<RXEN0) | (1<<RXCIE0);
 		SerialUnit::sUnits[0] = this;
+	}
+
+	void setDePin(uint8_t pin) override {
+		mMaster.setDePin(pin);
 	}
 
 	void received(const ResponseT<vocab_t> &res, uint8_t sender) override {
@@ -82,20 +86,20 @@ public:
 				break;
 			}
 		}
-			
+
 		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
 	}
 
 	void update() {
 		mMaster.update();
-		
+
 		if (mRxBufferReady) {
 			char command = mRxBuffer[0];
 			char *p;
 
 			p = strchr(&mRxBuffer[0], FEAD_CONDUCTOR_SEPARATOR);
 			*p = '\0';
-				
+
 			int number = atoi(&mRxBuffer[1]);
 
 			char *nextStart = p + 1;
@@ -109,7 +113,7 @@ public:
 			else {
 				param = static_cast<vocab_t>(atoi(nextStart));
 			}
-			
+
 			p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
 
 			if (p != NULL) {
@@ -118,7 +122,7 @@ public:
 			} else {
 				nextStart = NULL;
 			}
-			
+
 			if (FEAD_CONDUCTOR_IS_GET(command)) {
 				if (nextStart != NULL) {
 					auto value = atoi(nextStart);
@@ -126,12 +130,11 @@ public:
 				} else {
 					mMaster.get(number, RequestT<vocab_t>(param));
 				}
-				
+
 			} else if (FEAD_CONDUCTOR_IS_SET(command)) {
-				// TODO: set float too
 				auto longValue = atol(nextStart);
 				int intValue = static_cast<int>(longValue);
-				
+
 				p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
 
 				if (p != NULL) {
@@ -154,7 +157,7 @@ public:
 					}
 				}
 			}
-			
+
 			resetBuffer();
 		}
 	}
@@ -185,10 +188,8 @@ protected:
     volatile bool mRxBufferReady;
 	uint8_t mRxBuffer[FEAD_CONDUCTOR_RX_BUFFER_SIZE];
 	volatile uint8_t mRxByteCounter;
-
-	// char mPrintBuffer[FEAD_CONDUCTOR_REQUEST_QUEUE_LENGTH * 
 };
 
 using Conductor = ConductorT<uint8_t>;
-	
+
 }
