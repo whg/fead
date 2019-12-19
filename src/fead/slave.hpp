@@ -23,6 +23,7 @@
 #endif
 
 #define FEAD_SLAVE_UID_AS_ADDRESS 0xff
+#define FEAD_BROADCAST_REPLY_TIME_SPACE 2
 
 namespace fead {
 
@@ -61,7 +62,8 @@ public:
 		mFeadBufferReady(false),
 		mRequestHandler(nullptr),
 		mLastMessageTime(0),
-		mResponseSendTime(0)
+		mResponseSendTime(0),
+		mResponseDelay(0)
 	{}
 	
 	virtual ~SlaveT() {}
@@ -73,6 +75,7 @@ public:
 		if (mAddress == FEAD_SLAVE_UID_AS_ADDRESS) {
 			mAddress = mUid;
 		}
+		mResponseDelay = mAddress * FEAD_BROADCAST_REPLY_TIME_SPACE;
 	}
 	
 	void reply(const MessageT<vocab_t> &response) {
@@ -98,6 +101,7 @@ public:
 
 	void setAddress(uint8_t address) {
 		mAddress = address;
+		mResponseDelay = mAddress * FEAD_BROADCAST_REPLY_TIME_SPACE;
 	}
 
 	void setHandler(RequestHandler* const handler) {
@@ -127,16 +131,26 @@ public:
 
 				// library based getters and setters
 				if (param == Param::UID && mFeadPacket.getCommand() == Command::GET) {
-					reply(ResponseT<vocab_t>(param, mUid));
+					auto response = ResponseT<vocab_t>(param, mUid);
+					if (mFeadPacket.isBroadcast()) {
+						setQueuedResponse(now, response);
+					} else {
+						reply(response);
+					}
 				}
 				else if (param == Param::ADDRESS) {
+					ResponseT<vocab_t> response;
 					switch (mFeadPacket.getCommand()) {
-					case Command::GET:
-						reply(ResponseT<vocab_t>(param, mAddress));
-						break;
 					case Command::SET:
 						setAddress(mFeadPacket.bits.payload[0]);
-						reply(ResponseT<vocab_t>(param, mAddress));
+						// follow through
+					case Command::GET:
+						response = ResponseT<vocab_t>(param, mAddress); 
+						if (mFeadPacket.isBroadcast()) {
+							setQueuedResponse(now, response);
+						} else {
+							reply(response);
+						}
 						break;
 					}
 				}
@@ -153,8 +167,7 @@ public:
 						auto response = mRequestHandler->get(request);
 						if (!response.isNone()) {
 							if (mFeadPacket.isBroadcast()) {
-								mQueuedResponse = response;
-								mResponseSendTime = now + mAddress * 2;
+								setQueuedResponse(now, response);
 							} else {
 								reply(response);
 							}
@@ -164,8 +177,7 @@ public:
 					case Command::SET:
 						if (mRequestHandler->set(request)) {
 							if (mFeadPacket.isBroadcast()) {
-								mQueuedResponse = request;
-								mResponseSendTime = now + mAddress * 2;
+								setQueuedResponse(now, request);
 							} else {
 								reply(request);
 							}
@@ -180,7 +192,7 @@ public:
 			mFeadBufferReady = false;
 		}
 
-		if (mResponseSendTime && mResponseSendTime < now) {
+		if (mResponseSendTime && now >= mResponseSendTime) {
 			reply(mQueuedResponse);
 			mResponseSendTime = 0;
 		}
@@ -222,6 +234,11 @@ public:
 protected:
 	bool isReading() const { return mByteCounter < FEAD_PACKET_LENGTH && mByteCounter > 0; }
 
+	void setQueuedResponse(uint32_t now, const ResponseT<vocab_t> &response) {
+		mQueuedResponse = response;
+		mResponseSendTime = now + mResponseDelay;
+	}
+
 protected:
 	uint8_t mUid, mAddress;
 	bool mUseUidAsAddress;
@@ -248,6 +265,7 @@ protected:
 protected:
 	ResponseT<vocab_t> mQueuedResponse;
 	uint32_t mResponseSendTime;
+	uint32_t mResponseDelay;
 	
 };
 
