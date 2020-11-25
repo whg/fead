@@ -29,9 +29,9 @@ public:
 		mFeadBufferReady(false),
 		mReplyHandler(nullptr)
 	{}
-			
+
 	virtual ~MasterT() {}
-	
+
 	void get(uint8_t unit, const RequestT<vocab_t> &request) {
 #ifdef FEAD_DEBUG
 		Debug.print("g:");
@@ -71,7 +71,9 @@ public:
 				auto command = mFeadPacket.getCommand();
 				auto sender = mFeadPacket.bits.senderAddress;
 				mFeadBufferReady = false;
-				
+				memset(mFeadPacket.buffer, 0, FEAD_PACKET_LENGTH);
+				mFeadPacket.bits.senderAddress = 222;
+
 				switch (command) {
 				case Command::REPLY:
 					if (mReplyHandler) {
@@ -91,18 +93,18 @@ public:
 		}
 
 	}
-	
+
 public:
 	void receive(uint8_t status, uint8_t data) override {
 
-		if (status & (1<<FE0)) {			
+		if (status & (1<<FE0)) {
 			mByteCounter = 0;
 		}
 		else {
 			if (mByteCounter == 0) {
 				mPacketType = data;
 			}
-			
+
 			if (mPacketType == FEAD_PACKET_TYPE_FEAD && !mFeadBufferReady) {
 				mFeadPacket.buffer[mByteCounter++] = data;
 				if (mByteCounter == FEAD_PACKET_LENGTH) {
@@ -114,12 +116,12 @@ public:
 		}
 	}
 
-	
+
 
 protected:
 	volatile Packet mFeadPacket;
 	volatile bool mFeadBufferReady;
-	
+
 	volatile uint8_t mByteCounter;
 	volatile packet_type_t mPacketType;
 
@@ -128,5 +130,5 @@ protected:
 };
 
 using Master = MasterT<uint8_t>;
-	
+
 }

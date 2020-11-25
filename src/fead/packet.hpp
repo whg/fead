@@ -22,7 +22,7 @@
 namespace fead {
 
 using packet_type_t = uint8_t;
-	
+
 enum Command { SET, GET, REPLY }; // don't go over 4
 
 inline uint8_t get_checksum(const uint8_t *buffer) {
@@ -30,7 +30,7 @@ inline uint8_t get_checksum(const uint8_t *buffer) {
 	cs += buffer[0] + buffer[1] + buffer[2] + buffer[3];
 	return cs;
 }
-	
+
 union Packet {
 	Packet() {}
 
@@ -68,7 +68,7 @@ union Packet {
 	ArgType getArgType() const volatile {
 		return static_cast<ArgType>((bits.command >> FEAD_COMMAND_ARG_TYPE_SHIFT) & 7);
 	}
-	
+
 	uint8_t buffer[FEAD_PACKET_LENGTH];
 	struct {
 		uint8_t header;
@@ -81,5 +81,5 @@ union Packet {
 	} bits;
 };
 
-	
+
 }

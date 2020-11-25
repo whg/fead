@@ -19,11 +19,12 @@
 #endif
 
 #ifndef FEAD_SLAVE_RECEIVED_THRESHOLD
-#define FEAD_SLAVE_RECEIVED_THRESHOLD 1000
+#define FEAD_SLAVE_RECEIVED_THRESHOLD 45000ul
 #endif
 
 #define FEAD_SLAVE_UID_AS_ADDRESS 0xff
 #define FEAD_BROADCAST_REPLY_TIME_SPACE 2
+#define FEAD_BROADCAST_POST_PAUSE 500
 
 namespace fead {
 
@@ -37,7 +38,7 @@ enum EEPROMSlot {
   UID = 200,
 };
 
-	
+
 template <typename vocab_t>
 class SlaveT : public SerialUnit {
 public:
@@ -54,7 +55,7 @@ public:
 		UID = 255,
 		ADDRESS = 254,
 	};
-	
+
 public:
 	SlaveT(uint8_t address=FEAD_SLAVE_UID_AS_ADDRESS):
 		mAddress(address),
@@ -65,19 +66,19 @@ public:
 		mResponseSendTime(0),
 		mResponseDelay(0)
 	{}
-	
+
 	virtual ~SlaveT() {}
 
 	void open(uint8_t number) override {
 		SerialUnit::open(number);
-		
+
 		EEPROM.get(EEPROMSlot::UID, mUid);
 		if (mAddress == FEAD_SLAVE_UID_AS_ADDRESS) {
 			mAddress = mUid;
 		}
 		mResponseDelay = mAddress * FEAD_BROADCAST_REPLY_TIME_SPACE;
 	}
-	
+
 	void reply(const MessageT<vocab_t> &response) {
 		while (isReading());
 		SerialUnit::send(Packet::create(Command::REPLY, mAddress, FEAD_MASTER_ADDRESS, response));
@@ -85,7 +86,10 @@ public:
 
 	void send(uint8_t address, const RequestT<vocab_t> &request) {
 		while (isReading());
-		SerialUnit::send(Packet::create(Command::REPLY, mAddress, address, request));
+		// don't send something if the network is waiting for broadcast replies
+		if (millis() - mBroadcastReceived > FEAD_BROADCAST_POST_PAUSE) {
+			SerialUnit::send(Packet::create(Command::REPLY, mAddress, address, request));
+		}
 	}
 
 	template <typename T>
@@ -124,7 +128,7 @@ public:
 		}
 
 		auto now = millis();
-		
+
 		if (mFeadBufferReady) {
 			if (mFeadPacket.isValid(mAddress)) {
 				auto param = static_cast<vocab_t>(mFeadPacket.bits.param);
@@ -145,7 +149,7 @@ public:
 						setAddress(mFeadPacket.bits.payload[0]);
 						// follow through
 					case Command::GET:
-						response = ResponseT<vocab_t>(param, mAddress); 
+						response = ResponseT<vocab_t>(param, mAddress);
 						if (mFeadPacket.isBroadcast()) {
 							setQueuedResponse(now, response);
 						} else {
@@ -160,7 +164,7 @@ public:
 													 mFeadPacket.bits.payload,
 													 mFeadPacket.getNumArgs(),
 													 mFeadPacket.getArgType());
-				
+
 					switch (mFeadPacket.getCommand()) {
 					case Command::GET:
 					{
@@ -185,7 +189,7 @@ public:
 						break;
 					}
 				}
-				
+
 				mLastMessageTime = now;
 			}
 
@@ -203,7 +207,7 @@ public:
 
 public:
 	void receive(uint8_t status, uint8_t data) override {
-		if (status & (1<<FE0)) {			
+		if (status & (1<<FE0)) {
 			mByteCounter = 0;
 			mPacketType = FEAD_PACKET_TYPE_NONE;
 		}
@@ -214,11 +218,11 @@ public:
 			else if (mPacketType == FEAD_PACKET_TYPE_DMX) {
 				for (uint8_t i = 0; i < mDmxChannelCounter; i++) {
 					if (mDmxChannels[i] == mByteCounter) {
-						mDmxValues[i] = data;						
+						mDmxValues[i] = data;
 					}
 				}
 			}
-			
+
 			if (mPacketType == FEAD_PACKET_TYPE_FEAD && !mFeadBufferReady) {
 
 				mFeadPacket.buffer[mByteCounter++] = data;
@@ -235,6 +239,7 @@ protected:
 	bool isReading() const { return mByteCounter < FEAD_PACKET_LENGTH && mByteCounter > 0; }
 
 	void setQueuedResponse(uint32_t now, const ResponseT<vocab_t> &response) {
+		mBroadcastReceived = now;
 		mQueuedResponse = response;
 		mResponseSendTime = now + mResponseDelay;
 	}
@@ -242,7 +247,7 @@ protected:
 protected:
 	uint8_t mUid, mAddress;
 	bool mUseUidAsAddress;
-	
+
 	dmx_receiver_t mDmxReceivers[FEAD_SLAVE_MAX_DMX_RECEIVERS];
 	uint8_t mDmxNumReceivers;
 
@@ -252,7 +257,7 @@ protected:
 
 	volatile Packet mFeadPacket;
 	volatile bool mFeadBufferReady;
-	
+
 	volatile uint8_t mByteCounter;
 	volatile packet_type_t mPacketType;
 
@@ -266,7 +271,7 @@ protected:
 	ResponseT<vocab_t> mQueuedResponse;
 	uint32_t mResponseSendTime;
 	uint32_t mResponseDelay;
-	
+	uint32_t mBroadcastReceived;
 };
 
 using DmxSlave = SlaveT<uint8_t>; // is this good?

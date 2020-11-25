@@ -18,6 +18,8 @@
 #define FEAD_CONDUCTOR_TERMINATOR '\n'
 #define FEAD_CONDUCTOR_GET_MASK 'G'
 #define FEAD_CONDUCTOR_SET_MASK 'S'
+#define FEAD_CONDUCTOR_POWER_CHAR 'p'
+
 
 #define TWO_TO_THE_15 32768
 
@@ -33,7 +35,8 @@ class ConductorT : public SerialUnit, public MasterT<vocab_t>::ReplyHandler {
 public:
 	ConductorT():
 		mRxBufferReady(false),
-		mRxByteCounter(0)
+		mRxByteCounter(0),
+		mLastSent(0), mLastReceived(0)
 	{
           resetBuffer();
 	}
@@ -46,6 +49,8 @@ public:
 		Debug.begin(baud);
 		UCSR0B |= (1<<RXEN0) | (1<<RXCIE0);
 		SerialUnit::sUnits[0] = this;
+
+		DDRB |= (1<< PB0);
 	}
 
 	void setDePin(uint8_t pin) override {
@@ -88,6 +93,7 @@ public:
 		}
 
 		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
+		mLastReceived = millis();
 	}
 
 	void update() {
@@ -102,59 +108,64 @@ public:
 
 			int number = atoi(&mRxBuffer[1]);
 
-			char *nextStart = p + 1;
-			vocab_t param;
-			if (*nextStart == 'i') {
-				param = static_cast<vocab_t>(Slave::Param::UID);
-			}
-			else if (*nextStart == 'a') {
-				param = static_cast<vocab_t>(Slave::Param::ADDRESS);
+			if (command == FEAD_CONDUCTOR_POWER_CHAR) {
+				if (number) {
+					PORTB |= (1 << PB0);
+				} else {
+					PORTB &= ~(1 << PB0);
+				}
 			}
 			else {
-				param = static_cast<vocab_t>(atoi(nextStart));
-			}
-
-			p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
-
-			if (p != NULL) {
-				*p = '\0';
-				nextStart = p + 1;
-			} else {
-				nextStart = NULL;
-			}
-
-			if (FEAD_CONDUCTOR_IS_GET(command)) {
-				if (nextStart != NULL) {
-					auto value = atoi(nextStart);
-					mMaster.get(number, RequestT<vocab_t>(param, value));
-				} else {
-					mMaster.get(number, RequestT<vocab_t>(param));
+				char *nextStart = p + 1;
+				vocab_t param;
+				if (*nextStart == 'i') {
+					param = static_cast<vocab_t>(Slave::Param::UID);
 				}
-
-			} else if (FEAD_CONDUCTOR_IS_SET(command)) {
-				auto longValue = atol(nextStart);
-				int intValue = static_cast<int>(longValue);
+				else if (*nextStart == 'a') {
+					param = static_cast<vocab_t>(Slave::Param::ADDRESS);
+				}
+				else {
+					param = static_cast<vocab_t>(atoi(nextStart));
+				}
 
 				p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
 
 				if (p != NULL) {
+					*p = '\0';
 					nextStart = p + 1;
-					if (strchr(nextStart, '.') != NULL) {
-						auto extraFloatValue = atof(nextStart);
-						mMaster.set(number, RequestT<vocab_t>(param, intValue, extraFloatValue));
+				} else {
+					nextStart = NULL;
+				}
+
+				if (FEAD_CONDUCTOR_IS_GET(command)) {
+					if (nextStart != NULL) {
+						auto value = atoi(nextStart);
+						mMaster.get(number, RequestT<vocab_t>(param, value));
 					} else {
+						mMaster.get(number, RequestT<vocab_t>(param));
+					}
+					mLastSent = millis();
+				} else if (FEAD_CONDUCTOR_IS_SET(command)) {
+					auto longValue = atol(nextStart);
+					int intValue = static_cast<int>(longValue);
+
+					p = strchr(nextStart, FEAD_CONDUCTOR_SEPARATOR);
+
+					if (p != NULL) {
+						nextStart = p + 1;
 						auto extraIntValue = atoi(nextStart);
 						mMaster.set(number, RequestT<vocab_t>(param, intValue, extraIntValue));
-					}
-				} else {
-					if (labs(longValue) > TWO_TO_THE_15) {
-						mMaster.set(number, RequestT<vocab_t>(param, longValue));
-					} else if(strchr(nextStart, '.') != NULL) {
-						float floatValue = atof(nextStart);
-						mMaster.set(number, RequestT<vocab_t>(param, floatValue));
 					} else {
-						mMaster.set(number, RequestT<vocab_t>(param, intValue));
+						if (labs(longValue) > TWO_TO_THE_15) {
+							mMaster.set(number, RequestT<vocab_t>(param, longValue));
+						} else if(strchr(nextStart, '.') != NULL) {
+							float floatValue = atof(nextStart);
+							mMaster.set(number, RequestT<vocab_t>(param, floatValue));
+						} else {
+							mMaster.set(number, RequestT<vocab_t>(param, intValue));
+						}
 					}
+					mLastSent = millis();
 				}
 			}
 
@@ -175,6 +186,9 @@ public:
 		}
 	}
 
+	uint32_t getLastSent() const { return mLastSent; }
+	uint32_t getLastReceived() const { return mLastReceived; }
+
 protected:
 	void resetBuffer() {
 		mRxByteCounter = 0;
@@ -188,6 +202,9 @@ protected:
     volatile bool mRxBufferReady;
 	uint8_t mRxBuffer[FEAD_CONDUCTOR_RX_BUFFER_SIZE];
 	volatile uint8_t mRxByteCounter;
+
+protected:
+	uint32_t mLastSent, mLastReceived;
 };
 
 using Conductor = ConductorT<uint8_t>;

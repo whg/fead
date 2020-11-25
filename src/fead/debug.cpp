@@ -63,7 +63,7 @@ void _Debug::print(float f) {
 			f = -f;
 		}
 		float rounding = 0.5f;
-		uint8_t digits = 3;
+		uint8_t digits = 5;
 		for (uint8_t i = 0; i < digits; i++) {
 			rounding /= 10.f;
 		}
