@@ -14,23 +14,23 @@
 namespace fead {
 
 template <typename vocab_t>
-class MasterT : public SerialUnit {
+class ControllerT : public SerialUnit {
 public:
 	class ReplyHandler {
 	public:
 		virtual void received(const ResponseT<vocab_t> &res, uint8_t sender) = 0;
 	protected:
-		MasterT<vocab_t> *mMasterRef = nullptr;
-		friend class MasterT<vocab_t>;
+		ControllerT<vocab_t> *mControllerRef = nullptr;
+		friend class ControllerT<vocab_t>;
 	};
 
 public:
-	MasterT():
+	ControllerT():
 		mFeadBufferReady(false),
 		mReplyHandler(nullptr)
 	{}
 
-	virtual ~MasterT() {}
+	virtual ~ControllerT() {}
 
 	void get(uint8_t unit, const RequestT<vocab_t> &request) {
 #ifdef FEAD_DEBUG
@@ -56,7 +56,7 @@ public:
 
 	void setHandler(ReplyHandler* const handler) {
 		mReplyHandler = handler;
-		handler->mMasterRef = this;
+		handler->mControllerRef = this;
 	}
 
 	void update() {
@@ -128,6 +128,6 @@ protected:
 	ReplyHandler *mReplyHandler;
 };
 
-using Master = MasterT<uint8_t>;
+using Controller = ControllerT<uint8_t>;
 
 }

@@ -10,19 +10,19 @@
 #include "fead/response.hpp"
 #include "fead/request.hpp"
 
-#ifndef FEAD_SLAVE_MAX_DMX_RECEIVERS
-#define FEAD_SLAVE_MAX_DMX_RECEIVERS 5
+#ifndef FEAD_CLIENT_MAX_DMX_RECEIVERS
+#define FEAD_CLIENT_MAX_DMX_RECEIVERS 5
 #endif
 
-#ifndef FEAD_SLAVE_MAX_DMX_CHANNELS
-#define FEAD_SLAVE_MAX_DMX_CHANNELS 8
+#ifndef FEAD_CLIENT_MAX_DMX_CHANNELS
+#define FEAD_CLIENT_MAX_DMX_CHANNELS 8
 #endif
 
-#ifndef FEAD_SLAVE_RECEIVED_THRESHOLD
-#define FEAD_SLAVE_RECEIVED_THRESHOLD 45000ul
+#ifndef FEAD_CLIENT_RECEIVED_THRESHOLD
+#define FEAD_CLIENT_RECEIVED_THRESHOLD 45000ul
 #endif
 
-#define FEAD_SLAVE_UID_AS_ADDRESS 0xff
+#define FEAD_CLIENT_UID_AS_ADDRESS 0xff
 #define FEAD_BROADCAST_REPLY_TIME_SPACE 2
 #define FEAD_BROADCAST_POST_PAUSE 500
 
@@ -42,15 +42,15 @@ enum EEPROMSlot {
 
 
 template <typename vocab_t>
-class SlaveT : public SerialUnit {
+class ClientT : public SerialUnit {
 public:
 	class RequestHandler {
 	public:
 		virtual ResponseT<vocab_t> get(const RequestT<vocab_t> &req) = 0;
 		virtual bool set(const RequestT<vocab_t> &req) = 0;
 	protected:
-		SlaveT<vocab_t> *mSlaveRef = nullptr;
-		friend class SlaveT<vocab_t>;
+		ClientT<vocab_t> *mClientRef = nullptr;
+		friend class ClientT<vocab_t>;
 	};
 
 	enum Param {
@@ -60,7 +60,7 @@ public:
 	};
 
 public:
-	SlaveT(uint8_t address=FEAD_SLAVE_UID_AS_ADDRESS):
+	ClientT(uint8_t address=FEAD_CLIENT_UID_AS_ADDRESS):
 		mAddress(address),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
@@ -70,13 +70,13 @@ public:
 		mResponseDelay(0)
 	{}
 
-	virtual ~SlaveT() {}
+	virtual ~ClientT() {}
 
 	void open(uint8_t number) override {
 		SerialUnit::open(number);
 
 		EEPROM.get(EEPROMSlot::UID, mUid);
-		if (mAddress == FEAD_SLAVE_UID_AS_ADDRESS) {
+		if (mAddress == FEAD_CLIENT_UID_AS_ADDRESS) {
 			mAddress = mUid;
 		}
 		mResponseDelay = mAddress * FEAD_BROADCAST_REPLY_TIME_SPACE;
@@ -113,11 +113,11 @@ public:
 
 	void setHandler(RequestHandler* const handler) {
 		mRequestHandler = handler;
-		handler->mSlaveRef = this;
+		handler->mClientRef = this;
 	}
 
 	bool isReceiving() {
-		return mLastMessageTime > 0 && millis() - mLastMessageTime < FEAD_SLAVE_RECEIVED_THRESHOLD;
+		return mLastMessageTime > 0 && millis() - mLastMessageTime < FEAD_CLIENT_RECEIVED_THRESHOLD;
 	}
 
 	void update() {
@@ -259,11 +259,11 @@ protected:
 	uint8_t mUid, mAddress;
 	bool mUseUidAsAddress;
 
-	dmx_receiver_t mDmxReceivers[FEAD_SLAVE_MAX_DMX_RECEIVERS];
+	dmx_receiver_t mDmxReceivers[FEAD_CLIENT_MAX_DMX_RECEIVERS];
 	uint8_t mDmxNumReceivers;
 
-	uint16_t mDmxChannels[FEAD_SLAVE_MAX_DMX_CHANNELS];
-	volatile uint8_t mDmxValues[FEAD_SLAVE_MAX_DMX_CHANNELS];
+	uint16_t mDmxChannels[FEAD_CLIENT_MAX_DMX_CHANNELS];
+	volatile uint8_t mDmxValues[FEAD_CLIENT_MAX_DMX_CHANNELS];
 	uint8_t mDmxChannelCounter;
 
 	volatile Packet mFeadPacket;
@@ -285,7 +285,7 @@ protected:
 	uint32_t mBroadcastReceived;
 };
 
-using DmxSlave = SlaveT<uint8_t>; // is this good?
-using Slave = SlaveT<uint8_t>;
+using DmxClient = ClientT<uint8_t>; // is this good?
+using Client = ClientT<uint8_t>;
 
 }

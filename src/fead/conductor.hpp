@@ -3,9 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "fead/master.hpp"
+#include "fead/controller.hpp"
 #include "fead/hardware.hpp"
-#include "fead/slave.hpp"
+#include "fead/client.hpp"
 
 #define FEAD_CONDUCTOR_DEFAULT_BAUD 1000000ul
 #define FEAD_CONDUCTOR_RX_BUFFER_SIZE 64
@@ -30,7 +30,7 @@
 namespace fead {
 
 template <typename vocab_t>
-class ConductorT : public SerialUnit, public MasterT<vocab_t>::ReplyHandler {
+class ConductorT : public SerialUnit, public ControllerT<vocab_t>::ReplyHandler {
 public:
 	ConductorT():
 		mRxBufferReady(false),
@@ -40,9 +40,9 @@ public:
           resetBuffer();
 	}
 
-	void init(uint8_t masterSerialUnit, uint32_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
-		mMaster.open(masterSerialUnit);
-		mMaster.setHandler(this);
+	void init(uint8_t controllerSerialUnit, uint32_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
+		mController.open(controllerSerialUnit);
+		mController.setHandler(this);
 
 		// conductor always is on USB port
 		Debug.begin(baud);
@@ -53,7 +53,7 @@ public:
 	}
 
 	void setDePin(uint8_t pin) override {
-		mMaster.setDePin(pin);
+		mController.setDePin(pin);
 	}
 
 	void received(const ResponseT<vocab_t> &res, uint8_t sender) override {
@@ -96,7 +96,7 @@ public:
 	}
 
 	void update() {
-		mMaster.update();
+		mController.update();
 
 		if (mRxBufferReady) {
 			char command = mRxBuffer[0];
@@ -118,10 +118,10 @@ public:
 				char *nextStart = p + 1;
 				vocab_t param;
 				if (*nextStart == 'i') {
-					param = static_cast<vocab_t>(Slave::Param::UID);
+					param = static_cast<vocab_t>(Client::Param::UID);
 				}
 				else if (*nextStart == 'a') {
-					param = static_cast<vocab_t>(Slave::Param::ADDRESS);
+					param = static_cast<vocab_t>(Client::Param::ADDRESS);
 				}
 				else {
 					param = static_cast<vocab_t>(atoi(nextStart));
@@ -139,9 +139,9 @@ public:
 				if (FEAD_CONDUCTOR_IS_GET(command)) {
 					if (nextStart != NULL) {
 						auto value = atoi(nextStart);
-						mMaster.get(number, RequestT<vocab_t>(param, value));
+						mController.get(number, RequestT<vocab_t>(param, value));
 					} else {
-						mMaster.get(number, RequestT<vocab_t>(param));
+						mController.get(number, RequestT<vocab_t>(param));
 					}
 					mLastSent = millis();
 				} else if (FEAD_CONDUCTOR_IS_SET(command)) {
@@ -153,15 +153,15 @@ public:
 					if (p != NULL) {
 						nextStart = p + 1;
 						auto extraIntValue = atoi(nextStart);
-						mMaster.set(number, RequestT<vocab_t>(param, intValue, extraIntValue));
+						mController.set(number, RequestT<vocab_t>(param, intValue, extraIntValue));
 					} else {
 						if (labs(longValue) > TWO_TO_THE_15) {
-							mMaster.set(number, RequestT<vocab_t>(param, longValue));
+							mController.set(number, RequestT<vocab_t>(param, longValue));
 						} else if(strchr(nextStart, '.') != NULL) {
 							float floatValue = atof(nextStart);
-							mMaster.set(number, RequestT<vocab_t>(param, floatValue));
+							mController.set(number, RequestT<vocab_t>(param, floatValue));
 						} else {
-							mMaster.set(number, RequestT<vocab_t>(param, intValue));
+							mController.set(number, RequestT<vocab_t>(param, intValue));
 						}
 					}
 					mLastSent = millis();
@@ -196,7 +196,7 @@ protected:
 	}
 
 protected:
-	MasterT<vocab_t> mMaster;
+	ControllerT<vocab_t> mController;
 
     volatile bool mRxBufferReady;
 	uint8_t mRxBuffer[FEAD_CONDUCTOR_RX_BUFFER_SIZE];
