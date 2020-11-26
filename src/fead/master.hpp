@@ -72,7 +72,6 @@ public:
 				auto sender = mFeadPacket.bits.senderAddress;
 				mFeadBufferReady = false;
 				memset(mFeadPacket.buffer, 0, FEAD_PACKET_LENGTH);
-				mFeadPacket.bits.senderAddress = 222;
 
 				switch (command) {
 				case Command::REPLY:

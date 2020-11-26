@@ -7,7 +7,7 @@
 #include "fead/hardware.hpp"
 #include "fead/slave.hpp"
 
-#define FEAD_CONDUCTOR_DEFAULT_BAUD 38400ul
+#define FEAD_CONDUCTOR_DEFAULT_BAUD 1000000ul
 #define FEAD_CONDUCTOR_RX_BUFFER_SIZE 64
 
 #ifndef FEAD_CONDUCTOR_REQUEST_QUEUE_LENGTH
@@ -19,7 +19,6 @@
 #define FEAD_CONDUCTOR_GET_MASK 'G'
 #define FEAD_CONDUCTOR_SET_MASK 'S'
 #define FEAD_CONDUCTOR_POWER_CHAR 'p'
-
 
 #define TWO_TO_THE_15 32768
 

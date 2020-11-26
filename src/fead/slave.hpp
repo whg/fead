@@ -26,6 +26,8 @@
 #define FEAD_BROADCAST_REPLY_TIME_SPACE 2
 #define FEAD_BROADCAST_POST_PAUSE 500
 
+#define FEAD_NOT_RECEIVED 0
+
 namespace fead {
 
 struct dmx_receiver_t {
@@ -54,6 +56,7 @@ public:
 	enum Param {
 		UID = 255,
 		ADDRESS = 254,
+		DISCOVER = 253,
 	};
 
 public:
@@ -62,7 +65,7 @@ public:
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
 		mRequestHandler(nullptr),
-		mLastMessageTime(0),
+		mLastMessageTime(FEAD_NOT_RECEIVED),
 		mResponseSendTime(0),
 		mResponseDelay(0)
 	{}
@@ -156,6 +159,14 @@ public:
 							reply(response);
 						}
 						break;
+					}
+				}
+				else if (param == Param::DISCOVER) {
+					if (mFeadPacket.getCommand() == Command::GET
+						&& mFeadPacket.isBroadcast()
+						&& mLastMessageTime != FEAD_NOT_RECEIVED) {
+						ResponseT<vocab_t> response(param, mUid);
+						setQueuedResponse(now, response);
 					}
 				}
 				// user defined
