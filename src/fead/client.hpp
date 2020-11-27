@@ -164,7 +164,7 @@ public:
 				else if (param == Param::DISCOVER) {
 					if (mFeadPacket.getCommand() == Command::GET
 						&& mFeadPacket.isBroadcast()
-						&& mLastMessageTime != FEAD_NOT_RECEIVED) {
+						&& mLastMessageTime == FEAD_NOT_RECEIVED) {
 						ResponseT<vocab_t> response(param, mUid);
 						setQueuedResponse(now, response);
 					}
