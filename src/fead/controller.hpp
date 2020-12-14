@@ -70,7 +70,6 @@ public:
 				// grab these here and allow for more data to be received
 				auto command = mFeadPacket.getCommand();
 				auto sender = mFeadPacket.bits.senderAddress;
-				mFeadBufferReady = false;
 				memset(mFeadPacket.buffer, 0, FEAD_PACKET_LENGTH);
 
 				switch (command) {
@@ -89,13 +88,12 @@ public:
 					break;
 				}
 			}
+			mFeadBufferReady = false;
 		}
-
 	}
 
 public:
 	void receive(uint8_t status, uint8_t data) override {
-
 		if (status & (1<<FE0)) {
 			mByteCounter = 0;
 		}
@@ -103,19 +101,15 @@ public:
 			if (mByteCounter == 0) {
 				mPacketType = data;
 			}
-
 			if (mPacketType == FEAD_PACKET_TYPE_FEAD && !mFeadBufferReady) {
-				mFeadPacket.buffer[mByteCounter++] = data;
-				if (mByteCounter == FEAD_PACKET_LENGTH) {
+				mFeadPacket.buffer[mByteCounter] = data;
+				if (mByteCounter >= FEAD_PACKET_LENGTH - 1) {
 					mFeadBufferReady = true;
 				}
-			} else {
-				mByteCounter++;
 			}
+			mByteCounter++;
 		}
 	}
-
-
 
 protected:
 	volatile Packet mFeadPacket;

@@ -83,12 +83,10 @@ public:
 	}
 
 	void reply(const MessageT<vocab_t> &response) {
-		while (isReading());
 		SerialUnit::send(Packet::create(Command::REPLY, mAddress, FEAD_MASTER_ADDRESS, response));
 	}
 
 	void send(uint8_t address, const RequestT<vocab_t> &request) {
-		while (isReading());
 		// don't send something if the network is waiting for broadcast replies
 		if (millis() - mBroadcastReceived > FEAD_BROADCAST_POST_PAUSE) {
 			SerialUnit::send(Packet::create(Command::REPLY, mAddress, address, request));
@@ -235,14 +233,12 @@ public:
 			}
 
 			if (mPacketType == FEAD_PACKET_TYPE_FEAD && !mFeadBufferReady) {
-
-				mFeadPacket.buffer[mByteCounter++] = data;
-				if (mByteCounter == FEAD_PACKET_LENGTH) {
+				mFeadPacket.buffer[mByteCounter] = data;
+				if (mByteCounter >= FEAD_PACKET_LENGTH - 1) {
 					mFeadBufferReady = true;
 				}
-			} else {
-				mByteCounter++;
 			}
+			mByteCounter++;
 		}
 	}
 
