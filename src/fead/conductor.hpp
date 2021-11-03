@@ -122,7 +122,7 @@ public:
 					Debug.print(number);
 					Debug.print(FEAD_CONDUCTOR_TERMINATOR);
 				}
-				else {
+				else if (mRxBuffer[1] != 'u') { // incase of undefined
 					char *p = strchr(&mRxBuffer[0], FEAD_CONDUCTOR_SEPARATOR);
 					*p = '\0';
 
