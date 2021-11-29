@@ -9,6 +9,7 @@
 #include "fead/packet.hpp"
 #include "fead/response.hpp"
 #include "fead/request.hpp"
+#include "fead/version.hpp"
 
 #ifndef FEAD_CLIENT_MAX_DMX_RECEIVERS
 #define FEAD_CLIENT_MAX_DMX_RECEIVERS 5
@@ -57,6 +58,7 @@ public:
 		UID = 255,
 		ADDRESS = 254,
 		DISCOVER = 253,
+		VERSION = 252,
 	};
 
 public:
@@ -165,6 +167,14 @@ public:
 						&& mLastMessageTime == FEAD_NOT_RECEIVED) {
 						ResponseT<vocab_t> response(param, mUid);
 						setQueuedResponse(now, response);
+					}
+				}
+				else if (param == Param::VERSION && mFeadPacket.getCommand() == Command::GET) {
+					auto response = ResponseT<vocab_t>(param, VERSION);
+					if (mFeadPacket.isBroadcast()) {
+						setQueuedResponse(now, response);
+					} else {
+						reply(response);
 					}
 				}
 				// user defined
