@@ -202,6 +202,7 @@ public:
 				mLastMessageTime = now;
 			}
 
+			mPacketType = FEAD_PACKET_TYPE_NONE;
 			mFeadBufferReady = false;
 		}
 
@@ -233,7 +234,9 @@ public:
 			}
 
 			if (mPacketType == FEAD_PACKET_TYPE_FEAD && !mFeadBufferReady) {
-				mFeadPacket.buffer[mByteCounter] = data;
+				if (mByteCounter < FEAD_PACKET_LENGTH) {
+					mFeadPacket.buffer[mByteCounter] = data;
+				}
 				if (mByteCounter >= FEAD_PACKET_LENGTH - 1) {
 					mFeadBufferReady = true;
 				}
