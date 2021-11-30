@@ -212,6 +212,7 @@ public:
 				mLastMessageTime = now;
 			}
 
+			memset(mFeadPacket.buffer, 0, FEAD_PACKET_LENGTH);
 			mPacketType = FEAD_PACKET_TYPE_NONE;
 			mFeadBufferReady = false;
 		}
@@ -227,11 +228,11 @@ public:
 
 public:
 	void receive(uint8_t status, uint8_t data) override {
-		if (status & (1<<FE0)) {
+		if (status & (1 << FE0)) {
 			mByteCounter = 0;
 			mPacketType = FEAD_PACKET_TYPE_NONE;
 		}
-		else {
+		else if ((status & 0b00011100) == 0) {
 			if (mByteCounter == 0) {
 				mPacketType = data;
 			}
