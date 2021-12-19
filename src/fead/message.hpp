@@ -9,11 +9,11 @@
 namespace fead {
 
 enum class ArgType { NONE, INT16, FLOAT, UINT32, INT32, BOOL, UINT8 }; // don't go over 8
-	
+
 template <typename vocab_t>
 class MessageT {
 public:
-	MessageT() = default;
+	MessageT(): mArgType(ArgType::NONE) {}
 	MessageT(vocab_t param): mParam(param), mNumArgs(0), mArgType(ArgType::NONE) { mData.uint32 = 0; }
 
 	MessageT(vocab_t param, int v): mParam(param), mArgType(ArgType::INT16) { setValue(v); }
@@ -23,7 +23,7 @@ public:
 	MessageT(vocab_t param, int32_t v): mParam(param), mArgType(ArgType::INT32) { setValue(v); }
 	MessageT(vocab_t param, bool v): mParam(param), mArgType(ArgType::BOOL) { setValue(v); }
 	MessageT(vocab_t param, uint8_t v): mParam(param), mArgType(ArgType::UINT8) { setValue(v); }
-	
+
 	MessageT(vocab_t param, int16_t v1, int16_t v2):
 		mParam(param),
 		mNumArgs(2),
@@ -40,7 +40,7 @@ public:
 	{
 		memcpy(mData.buffer, buffer, FEAD_MESSAGE_PAYLOAD_LENGTH);
 	}
-	
+
 	virtual ~MessageT() {}
 
 	static MessageT<vocab_t> none() {
@@ -66,7 +66,7 @@ public:
 	bool asBool() const { return !!mData.buffer[0]; }
 
 	int16_t asInt16(uint8_t index=0) { return mData.int16s[index]; }
-			
+
 	void setParam(uint8_t p) { mParam = static_cast<vocab_t>(p); }
 	void setPayloadBuffer(const uint8_t *d) {
 		memset(mData.buffer, d, FEAD_MESSAGE_PAYLOAD_LENGTH);
@@ -76,7 +76,7 @@ public:
 	ArgType getArgType() const { return mArgType; }
 
 	bool isNone() const { return mArgType == ArgType::NONE; }
-	
+
 protected:
 	vocab_t mParam;
 	union {
