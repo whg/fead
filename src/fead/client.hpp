@@ -24,6 +24,7 @@
 #endif
 
 #define FEAD_CLIENT_UID_AS_ADDRESS 0xff
+#define FEAD_RESET_GROUP_NONE 0xff
 #define FEAD_BROADCAST_REPLY_TIME_SPACE 2
 #define FEAD_BROADCAST_POST_PAUSE 500
 
@@ -59,11 +60,13 @@ public:
 		ADDRESS = 254,
 		DISCOVER = 253,
 		VERSION = 252,
+		RESET = 251
 	};
 
 public:
 	ClientT(uint8_t address=FEAD_CLIENT_UID_AS_ADDRESS):
 		mAddress(address),
+		mResetGroup(FEAD_RESET_GROUP_NONE),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
 		mRequestHandler(nullptr),
@@ -82,6 +85,18 @@ public:
 			mAddress = mUid;
 		}
 		mResponseDelay = mAddress * FEAD_BROADCAST_REPLY_TIME_SPACE;
+	}
+
+	void reset() {
+		uint8_t pin = (1 << 2);
+		DDRB |= pin;
+		PORTB &= ~pin;
+		_delay_ms(1);
+		PORTB |= pin;
+	}
+
+	void setResetGroup(uint8_t group) {
+		mResetGroup = group;
 	}
 
 	void reply(const MessageT<vocab_t> &response) {
@@ -121,7 +136,6 @@ public:
 	}
 
 	void update() {
-
 		uint8_t dmxValueIndex = 0;
 		for (uint8_t i = 0; i < mDmxNumReceivers; i++) {
 			auto *receiver = &mDmxReceivers[i];
@@ -175,6 +189,16 @@ public:
 						setQueuedResponse(now, response);
 					} else {
 						reply(response);
+					}
+				}
+				else if (param == Param::RESET  && mFeadPacket.getCommand() == Command::SET) {
+					auto rightGroup = mFeadPacket.bits.payload[0] == mResetGroup;
+					if (!mFeadPacket.isBroadcast()) {
+						reply(ResponseT<vocab_t>(param, rightGroup));
+					}
+
+					if (rightGroup) {
+						reset();
 					}
 				}
 				// user defined
@@ -268,6 +292,7 @@ protected:
 protected:
 	uint8_t mUid, mAddress;
 	bool mUseUidAsAddress;
+	uint8_t mResetGroup;
 
 	dmx_receiver_t mDmxReceivers[FEAD_CLIENT_MAX_DMX_RECEIVERS];
 	uint8_t mDmxNumReceivers;
