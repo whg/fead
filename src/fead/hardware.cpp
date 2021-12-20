@@ -28,7 +28,7 @@ void SerialUnit::open(uint8_t number) {
 #endif
 #ifdef UART_3_AVAILABLE
 	case 3:FEAD_INIT_SERIAL(3); break;
-#endif			
+#endif
 	default: FEAD_INIT_SERIAL(0); break;
 	}
 
@@ -38,10 +38,8 @@ void SerialUnit::open(uint8_t number) {
 }
 
 void SerialUnit::send(const Packet &packet) const {
-	if (FEAD_DE_PIN_IS_SET(mDePin)) {
-		digitalWrite(mDePin, HIGH);
-	}
-	
+	driverEnable(true);
+
 	switch (mUnitNumber) {
 	case 0: { FEAD_SEND_PACKET(0, packet); break; }
 #ifdef UART_1_AVAILABLE
@@ -52,22 +50,26 @@ void SerialUnit::send(const Packet &packet) const {
 #endif
 #ifdef UART_3_AVAILABLE
 	case 3: { FEAD_SEND_PACKET(3, packet); break; }
-#endif			
+#endif
 	default: { FEAD_SEND_PACKET(0, packet); break; }
 	}
 
-	if (FEAD_DE_PIN_IS_SET(mDePin)) {
-		digitalWrite(mDePin, LOW);
-	}
+	driverEnable(false);
 }
 
 void SerialUnit::setDePin(uint8_t pin) {
 	mDePin = pin;
 	pinMode(mDePin, OUTPUT);
 	digitalWrite(mDePin, LOW); // listen
-}	
-	
 }
+
+void SerialUnit::driverEnable(bool on) {
+	if (FEAD_DE_PIN_IS_SET(mDePin)) {
+		digitalWrite(mDePin, on);
+	}
+}
+
+} // end namespace fead
 
 #if defined(__AVR_ATmega328P__)
 ISR(USART_RX_vect) {

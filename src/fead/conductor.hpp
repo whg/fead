@@ -8,8 +8,9 @@
 #include "fead/client.hpp"
 #include "fead/version.hpp"
 
+#define FEAD_CONDUCTOR_SERIAL_UNIT 1
 #define FEAD_CONDUCTOR_DEFAULT_BAUD 1000000ul
-#define FEAD_CONDUCTOR_RX_BUFFER_SIZE 64
+#define FEAD_CONDUCTOR_RX_BUFFER_SIZE 300
 
 #ifndef FEAD_CONDUCTOR_REQUEST_QUEUE_LENGTH
 #define FEAD_CONDUCTOR_REQUEST_QUEUE_LENGTH 120
@@ -21,6 +22,9 @@
 #define FEAD_CONDUCTOR_SET_MASK 'S'
 #define FEAD_CONDUCTOR_POWER_CHAR 'p'
 #define FEAD_CONDUCTOR_VERSION_CHAR 'v'
+#define FEAD_CONDUCTOR_FLASH_CHAR 'f'
+
+#define FEAD_FLASH_MAX_PAYLOAD 140
 
 #define TWO_TO_THE_15 32768
 
@@ -42,8 +46,8 @@ public:
           resetBuffer();
 	}
 
-	void init(uint8_t controllerSerialUnit, uint32_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
-		mController.open(controllerSerialUnit);
+	void init(uint32_t baud=FEAD_CONDUCTOR_DEFAULT_BAUD) {
+		mController.open(FEAD_CONDUCTOR_SERIAL_UNIT);
 		mController.setHandler(this);
 
 		// conductor always is on USB port
@@ -109,6 +113,8 @@ public:
 				Debug.print(FEAD_VERSION);
 				Debug.print(FEAD_CONDUCTOR_TERMINATOR);
 				digitalWrite(5, HIGH);
+			} else if (command == FEAD_CONDUCTOR_FLASH_CHAR) {
+				writeFlashPayload();
 			} else {
 				int number = atoi(&mRxBuffer[1]);
 
@@ -184,13 +190,11 @@ public:
 	}
 
 	void receive(uint8_t status, uint8_t data) override {
-		data &= 127; // not sure why the MSB is set!
 		if (!mRxBufferReady) {
 			if (data == FEAD_CONDUCTOR_TERMINATOR) {
 				mRxBuffer[mRxByteCounter++] = '\0';
 				mRxBufferReady = true;
-			} else {
-				// we can overflow...
+			} else if (mRxByteCounter < FEAD_CONDUCTOR_RX_BUFFER_SIZE) {
 				mRxBuffer[mRxByteCounter++] = data;
 			}
 		}
@@ -207,11 +211,55 @@ protected:
 	}
 
 protected:
+	void writeFlashPayload() {
+		char temp;
+		int flashNumBytes = 0;
+		for (int i = 1; i < mRxByteCounter - 1; i+= 2) {
+			temp = mRxBuffer[i + 2];
+			mRxBuffer[i + 2] = '\0';
+			mFlashBuffer[flashNumBytes++] = strtol(&mRxBuffer[i], NULL, 16);
+			mRxBuffer[i + 2] = temp;
+		}
+
+		// set uart for optiboot
+		UBRR1L = 8; // 115.2k baud at 16MHz
+		UCSR1C = (1<<UCSZ01) | (1<<UCSZ00); // 8 bit
+		UCSR1B = (1<<TXEN0);
+
+		mController.driverEnable();
+
+		cli();
+		for (int i = 0; i < flashNumBytes; i++) {
+			loop_until_bit_is_set(UCSR1A, UDRE1);
+			UDR1 = mFlashBuffer[i];
+			if (i > 0 && i % 32 == 0) {
+				_delay_ms(10);
+			}
+		}
+		UCSR1A |= (1<<TXC1);
+		loop_until_bit_is_set(UCSR1A, TXC1);
+		sei();
+
+		mController.driverEnable(false);
+
+		// reset uart for normal operation
+		mController.open(FEAD_CONDUCTOR_SERIAL_UNIT);
+
+		mLastSent = millis();
+
+		Debug.print('w');
+		Debug.print(flashNumBytes);
+		Debug.print(FEAD_CONDUCTOR_TERMINATOR);
+	}
+
+protected:
 	ControllerT<vocab_t> mController;
 
     volatile bool mRxBufferReady;
 	char mRxBuffer[FEAD_CONDUCTOR_RX_BUFFER_SIZE];
-	volatile uint8_t mRxByteCounter;
+	volatile uint16_t mRxByteCounter;
+
+	uint8_t mFlashBuffer[FEAD_FLASH_MAX_PAYLOAD];
 
 protected:
 	uint32_t mLastSent, mLastReceived;

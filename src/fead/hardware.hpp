@@ -63,6 +63,7 @@ public:
 	void send(const Packet &packet) const;
 
 	virtual void setDePin(uint8_t pin);
+	virtual void driverEnable(bool on=true);
 
 public:
 	virtual void receive(uint8_t status, uint8_t data) = 0;
