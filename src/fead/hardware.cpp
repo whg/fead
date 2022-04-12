@@ -63,7 +63,7 @@ void SerialUnit::setDePin(uint8_t pin) {
 	digitalWrite(mDePin, LOW); // listen
 }
 
-void SerialUnit::driverEnable(bool on) {
+void SerialUnit::driverEnable(bool on) const {
 	if (FEAD_DE_PIN_IS_SET(mDePin)) {
 		digitalWrite(mDePin, on);
 	}
@@ -71,7 +71,7 @@ void SerialUnit::driverEnable(bool on) {
 
 } // end namespace fead
 
-#if defined(__AVR_ATmega328P__)
+#if defined(USART_RX_vect)
 ISR(USART_RX_vect) {
 #else
 ISR(USART0_RX_vect) {

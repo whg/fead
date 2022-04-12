@@ -42,7 +42,7 @@
 	UCSR##n##A |= (1<<TXC##n);								   \
 	loop_until_bit_is_set(UCSR##n##A, TXC##n);				   \
 	FEAD_SET_SERIAL_SPEED(n, FEAD_FULL_SPEED);				   \
-	uint8_t *ptr = &packet.buffer[0];						   \
+	auto *ptr = const_cast<uint8_t*>(&packet.buffer[0]);	   \
 	for (uint8_t i = 0; i < FEAD_PACKET_LENGTH; i++) {		   \
 		loop_until_bit_is_set(UCSR##n##A, UDRE##n);			   \
 		UDR##n = *ptr++;									   \
@@ -63,7 +63,7 @@ public:
 	void send(const Packet &packet) const;
 
 	virtual void setDePin(uint8_t pin);
-	virtual void driverEnable(bool on=true);
+	virtual void driverEnable(bool on=true) const;
 
 public:
 	virtual void receive(uint8_t status, uint8_t data) = 0;

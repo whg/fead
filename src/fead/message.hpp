@@ -65,7 +65,7 @@ public:
 	int asInt() const { return static_cast<int>(mData.int32); }
 	bool asBool() const { return !!mData.buffer[0]; }
 
-	int16_t asInt16(uint8_t index=0) { return mData.int16s[index]; }
+	int16_t asInt16(uint8_t index=0) const { return mData.int16s[index]; }
 
 	void setParam(uint8_t p) { mParam = static_cast<vocab_t>(p); }
 	void setPayloadBuffer(const uint8_t *d) {

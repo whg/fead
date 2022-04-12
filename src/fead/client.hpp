@@ -204,7 +204,7 @@ public:
 				// user defined
 				else if (mRequestHandler) {
 					auto request = RequestT<vocab_t>(mFeadPacket.bits.param,
-													 mFeadPacket.bits.payload,
+													 const_cast<uint8_t*>(mFeadPacket.bits.payload),
 													 mFeadPacket.getNumArgs(),
 													 mFeadPacket.getArgType());
 
@@ -236,7 +236,7 @@ public:
 				mLastMessageTime = now;
 			}
 
-			memset(mFeadPacket.buffer, 0, FEAD_PACKET_LENGTH);
+			memset(const_cast<uint8_t*>(mFeadPacket.buffer), 0, FEAD_PACKET_LENGTH);
 			mPacketType = FEAD_PACKET_TYPE_NONE;
 			mFeadBufferReady = false;
 		}
@@ -245,6 +245,7 @@ public:
 			reply(mQueuedResponse);
 			mResponseSendTime = 0;
 		}
+		// PORTD |= (1<<3);
 	}
 
 	uint8_t getUid() const { return mUid; }
@@ -252,6 +253,7 @@ public:
 
 public:
 	void receive(uint8_t status, uint8_t data) override {
+		PORTD |= (1<<3);
 		if (status & (1 << FE0)) {
 			mByteCounter = 0;
 			mPacketType = FEAD_PACKET_TYPE_NONE;
