@@ -24,6 +24,7 @@
 #endif
 
 #define FEAD_CLIENT_UID_AS_ADDRESS 0xff
+#define FEAD_RESET_DEFAULT_PIN 10
 #define FEAD_RESET_GROUP_NONE 0xff
 #define FEAD_BROADCAST_REPLY_TIME_SPACE 2
 #define FEAD_BROADCAST_POST_PAUSE 500
@@ -66,6 +67,7 @@ public:
 public:
 	ClientT(uint8_t address=FEAD_CLIENT_UID_AS_ADDRESS):
 		mAddress(address),
+		mResetPin(FEAD_RESET_DEFAULT_PIN),
 		mResetGroup(FEAD_RESET_GROUP_NONE),
 		mDmxChannelCounter(0),
 		mFeadBufferReady(false),
@@ -88,11 +90,14 @@ public:
 	}
 
 	void reset() {
-		uint8_t pin = (1 << 2);
-		DDRB |= pin;
-		PORTB &= ~pin;
+		pinMode(mResetPin, OUTPUT);
+		digitalWrite(mResetPin, LOW);
 		_delay_ms(1);
-		PORTB |= pin;
+		digitalWrite(mResetPin, HIGH);
+	}
+
+	void setResetPin(uint8_t pin) {
+		mResetPin = pin;
 	}
 
 	void setResetGroup(uint8_t group) {
@@ -245,7 +250,6 @@ public:
 			reply(mQueuedResponse);
 			mResponseSendTime = 0;
 		}
-		// PORTD |= (1<<3);
 	}
 
 	uint8_t getUid() const { return mUid; }
@@ -253,7 +257,6 @@ public:
 
 public:
 	void receive(uint8_t status, uint8_t data) override {
-		PORTD |= (1<<3);
 		if (status & (1 << FE0)) {
 			mByteCounter = 0;
 			mPacketType = FEAD_PACKET_TYPE_NONE;
@@ -294,7 +297,7 @@ protected:
 protected:
 	uint8_t mUid, mAddress;
 	bool mUseUidAsAddress;
-	uint8_t mResetGroup;
+	uint8_t mResetPin, mResetGroup;
 
 	dmx_receiver_t mDmxReceivers[FEAD_CLIENT_MAX_DMX_RECEIVERS];
 	uint8_t mDmxNumReceivers;
